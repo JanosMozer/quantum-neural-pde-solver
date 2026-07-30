@@ -1,0 +1,11 @@
+{
+  "run_id": "run_0003",
+  "seed": 0,
+  "n_colloc": 128,
+  "n_bc": 32,
+  "adam_lr": 0.01,
+  "adam_steps": 300,
+  "lbfgs_lr": 0.1,
+  "lbfgs_steps": 50,
+  "lambda_bc": 10.0
+}

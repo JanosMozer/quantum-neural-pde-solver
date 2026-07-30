@@ -1,0 +1,36 @@
+# ── Fourier Feature Map ──────────────────────────────────────────────────────
+fourier:
+  sigma: 1.0      # std-dev of Gaussian frequency matrix B; higher = higher-freq features
+  seed:  42       # fixed RNG seed; must be identical at train and inference time
+
+# ── Quantum Circuit ───────────────────────────────────────────────────────────
+quantum:
+  n_qubits: 6     # circuit width; each qubit contributes one Pauli-Z readout
+  n_layers: 2     # StronglyEntanglingLayers depth; more = expressive but slower on CPU
+
+# ── MLP Architecture ─────────────────────────────────────────────────────────
+mlp:
+  hidden: [16, 16]  # widths of the two hidden layers [H1, H2]
+  # in_dim is derived: 2 * n_qubits (sin + cos Fourier features)
+  # out_dim is fixed: 2 (u and v velocity components)
+
+# ── Physics ───────────────────────────────────────────────────────────────────
+physics:
+  nu: 0.003183    # kinematic viscosity ν = 0.01/π ≈ 0.003183; lower = sharper gradients
+
+# ── Training ─────────────────────────────────────────────────────────────────
+training:
+  seed:      0      # global RNG seed for data sampling
+  n_colloc:  128    # PDE interior collocation points per step (more = accurate, slower)
+  n_bc:      32     # boundary / initial-condition training points
+  lambda_bc: 50.0   # BC loss weight relative to PDE loss; increase if BC not satisfied
+  log_every: 25     # print loss every N steps
+
+  adam:
+    lr:    0.01   # learning rate
+    steps: 300    # gradient steps
+
+  lbfgs:
+    lr:       0.1   # line-search step size
+    steps:    200    # outer L-BFGS iterations
+    max_iter: 20    # inner CG iterations per step (each calls closure; total ≈ steps×max_iter)
