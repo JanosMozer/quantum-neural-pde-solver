@@ -1,4 +1,12 @@
 venv/
+.venv/
 data/
 .claude/
 __pycache__/
+*.pyc
+*.egg-info/
+
+# be deliberate about which checkpoints get committed (existing run_0001-4 are
+# tracked already); new routine runs shouldn't bloat the repo by default
+checkpoints/run_*/
+!checkpoints/.gitkeep

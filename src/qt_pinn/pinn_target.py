@@ -1,13 +1,9 @@
 """Target PINN: classical MLP that accepts externally-generated weights."""
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from training.fourier import FourierFeatureMap
+from qt_pinn.fourier import FourierFeatureMap
 
 IN_DIM = 6
 H1 = 16
@@ -61,10 +57,7 @@ class TargetPINN(nn.Module):
 
 
 if __name__ == "__main__":
-    import sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from training.qnn_generator import QuantumWeightGenerator
+    from qt_pinn.qnn_generator import QuantumWeightGenerator
 
     model = TargetPINN()
     gen = QuantumWeightGenerator()
