@@ -7,11 +7,16 @@ dependencies = [
     "pennylane",
     "pennylane-lightning",
     "torch",
-    "quimb",
     "scipy",
     "numpy",
     "matplotlib",
     "pyyaml",
+]
+
+[project.optional-dependencies]
+baselines = [
+    "quimb",      # MPS baseline; requires numba which doesn't support Python 3.12 via old quimb
+    "numba>=0.56.0",  # force a Python-3.12-compatible numba build
 ]
 
 [build-system]

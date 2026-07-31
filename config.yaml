@@ -1,34 +1,42 @@
 fourier:
-  sigma: 1.0      # std-dev of Gaussian frequency matrix B; higher = higher-freq features
-  seed:  42       # fixed RNG seed; must be identical at train and inference time
+  sigma: 1.0   # std-dev of Gaussian frequency matrix B; higher = higher-freq features
+  seed:  42     # fixed RNG seed; must be identical at train and inference time
 
 quantum:
-  n_layers:      3   # circuit depth; more = expressive; re-uploading applied between each layer
+  n_layers:      3   # circuit depth; re-uploading between each layer
   partition_seed: 0  # seed for fixed random basis assignment; try 1,2,42 if stuck
+
 mlp:
   hidden: [16, 16]  # [H1, H2]; changing this changes total_weights and thus n_qubits
-  # in_dim = 6 (fixed: 2 × fourier.n_freqs); out_dim = 2 (u, v)
+  # in_dim = 6 (fixed); out_dim = 2 (u, v)
 
 physics:
-  nu: 0.003183    # kinematic viscosity ν = 0.01/π ≈ 0.003183; lower = sharper gradients
+  nu: 0.003183   # kinematic viscosity ν = 0.01/π
 
 training:
-  seed:            0      # global RNG seed for data sampling
-  n_colloc:        512    # PDE interior collocation points (more = accurate, slower)
-  n_bc:            128     # boundary / IC points; increase if bc stays high
-  lambda_bc:       1.0   # BC loss weight
-  adaptive_lambda: false  # true = auto-tune λ via gradient norm ratio
-  log_every:       500    # print every N steps
+  seed:     0
+  n_colloc: 1024   # PDE interior collocation points
+  n_bc:     512   # boundary / IC points
+
+  # ── Lambda — Wang et al. 2020 arXiv:2001.04536 ───────────────────────────
+  lambda_bc:             1.0    # initial λ
+  adaptive_lambda:       false  # true = auto-tune via gradient norm ratio
+  adaptive_lambda_alpha: 0.9    # EMA momentum (paper: 0.9)
+  adaptive_lambda_every: 1      # update every N steps
+  adaptive_lambda_warmup: 1000   # steps before annealing starts
+  lambda_max:            5.0    # hard cap
+
+  # ── LR schedule ──────────────────────────────────────────────────────────
+  cosine_annealing: true    # CosineAnnealingLR: lr decays from adam.lr to cosine_eta_min
+  cosine_eta_min:   0.01  # minimum lr at end of cycle
+
+  log_every: 500
 
   adam:
-    lr:    0.005   # stage 1 learning rate
-    steps: 3000    # stage 1 steps
-
-  adam2:           # second Adam phase replaces L-BFGS (more stable for probs landscape)
-    lr:    0.001   # lower lr for fine refinement
-    steps: 3000    # stage 2 steps
+    lr:    0.01   # peak lr; cosine decays to cosine_eta_min over adam.steps
+    steps: 10000    # total steps (replaces separate adam2 stage)
 
   lbfgs:
     lr:       0.1
-    steps:    0   # kept short; only runs if loss still high after both Adam phases
+    steps:    0    # disabled; set > 0 to re-enable
     max_iter: 10

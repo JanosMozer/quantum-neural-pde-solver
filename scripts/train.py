@@ -16,15 +16,19 @@ SEED            = _cfg["seed"]
 N_COLLOC        = _cfg["n_colloc"]
 N_BC            = _cfg["n_bc"]
 LAMBDA_BC       = _cfg["lambda_bc"]
-ADAPTIVE_LAMBDA = _cfg.get("adaptive_lambda", True)   # disable to fix lambda
+ADAPTIVE_LAMBDA = _cfg.get("adaptive_lambda", True)
+ALPHA           = _cfg.get("adaptive_lambda_alpha", 0.9)   # EMA momentum (paper: 0.9)
+ADAPT_EVERY     = _cfg.get("adaptive_lambda_every", 1)     # update every N steps (paper: every step)
+ADAPT_WARMUP    = _cfg.get("adaptive_lambda_warmup", 200)  # steps before annealing starts
+LAMBDA_MAX      = _cfg.get("lambda_max", 100.0)            # cap on λ to prevent runaway at init
 LOG_EVERY       = _cfg["log_every"]
 ADAM_LR         = _cfg["adam"]["lr"]
 ADAM_STEPS      = _cfg["adam"]["steps"]
-ADAM2_LR        = _cfg["adam2"]["lr"]
-ADAM2_STEPS     = _cfg["adam2"]["steps"]
 LBFGS_LR        = _cfg["lbfgs"]["lr"]
 LBFGS_STEPS     = _cfg["lbfgs"]["steps"]
 LBFGS_MAX_ITER  = _cfg["lbfgs"]["max_iter"]
+COSINE_ANNEAL   = _cfg.get("cosine_annealing", False)  # CosineAnnealingLR on stage 1 & 2
+COSINE_ETA_MIN  = _cfg.get("cosine_eta_min", 1e-5)     # minimum lr at end of cosine cycle
 
 
 def _next_run_dir(base: Path = Path("checkpoints")) -> tuple[str, Path]:
@@ -53,26 +57,27 @@ def make_bc(n: int) -> tuple[torch.Tensor, ...]:
     return x, y, t, u, v
 
 
-def _grad_norm(loss: torch.Tensor, params: list) -> float:
-    gs = torch.autograd.grad(loss, params, retain_graph=True, allow_unused=True)
-    return torch.stack([g.norm() for g in gs if g is not None]).mean().item()
+def adaptive_lambda(pde: torch.Tensor, bc: torch.Tensor,
+                    params: list, current: float, alpha: float = 0.9) -> float:
+    """Wang et al. 2020 (arXiv:2001.04536), Algorithm 1.
+
+    λ̂ = max_θ|∇_θ L_pde| / mean_θ|∇_θ L_bc|
+    λ  = (1-α)·λ + α·λ̂          (EMA, paper recommends α=0.9)
+    """
+    g_pde = torch.autograd.grad(pde, params, retain_graph=True, allow_unused=True)
+    g_bc  = torch.autograd.grad(bc,  params, retain_graph=True, allow_unused=True)
+
+    max_pde  = max(g.abs().max() for g in g_pde if g is not None)
+    mean_bc  = torch.cat([g.flatten() for g in g_bc  if g is not None]).abs().mean()
+
+    lam_hat = min((max_pde / (mean_bc + 1e-8)).item(), LAMBDA_MAX)  # cap prevents init explosion
+    return (1 - alpha) * current + alpha * lam_hat
 
 
-def adaptive_lambda(gen, model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc,
-                    current: float, alpha: float = 0.9) -> float:
-    """Gradient-norm ratio λ = ‖∇pde‖ / ‖∇bc‖, smoothed with EMA α."""
-    params = [p for p in gen.parameters() if p.requires_grad]
-    w = gen()
-    pde, bc = compute_burgers_loss(model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, w)
-    new_lam = _grad_norm(pde, params) / (_grad_norm(bc, params) + 1e-8)
-    return alpha * current + (1 - alpha) * new_lam   # EMA — prevents jumping
-
-
-def loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc,
-            lam: float) -> tuple[torch.Tensor, float, float]:
+def forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc):
     weights = gen()
     pde, bc = compute_burgers_loss(model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, weights)
-    return pde + lam * bc, pde.item(), bc.item()
+    return pde, bc
 
 
 def main() -> None:
@@ -90,58 +95,56 @@ def main() -> None:
     x, y, t                  = make_colloc(N_COLLOC)
     x_bc, y_bc, t_bc, u_bc, v_bc = make_bc(N_BC)
 
-    lam = float(LAMBDA_BC)   # mutable lambda, starts from config value
+    lam = float(LAMBDA_BC)
 
-    # ── Stage 1: Adam ──────────────────────────────────────────────────────
-    opt = torch.optim.Adam(params, lr=ADAM_LR)
-    print(f"\nStage 1  Adam  lr={ADAM_LR}  steps={ADAM_STEPS}")
-    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}")
-    for step in range(ADAM_STEPS):
-        # adaptive lambda every 50 steps
-        if ADAPTIVE_LAMBDA and step % 50 == 0 and step > 0:
-            lam = adaptive_lambda(gen, model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
+    def _step(opt, step):
+        """One gradient step with optional paper lambda update."""
+        nonlocal lam
         opt.zero_grad()
-        loss, pde, bc = loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
+        pde, bc = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
+        if ADAPTIVE_LAMBDA and step >= ADAPT_WARMUP and step % ADAPT_EVERY == 0:
+            lam = adaptive_lambda(pde, bc, params, lam, ALPHA)
+        loss = pde + lam * bc
         loss.backward()
         opt.step()
-        if step % LOG_EVERY == 0:
-            print(f"{step:6d}  {loss.item():12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.2f}")
+        return loss.item(), pde.item(), bc.item()
 
-    # ── Stage 2: Adam (fine refinement) ────────────────────────────────────
-    opt2 = torch.optim.Adam(params, lr=ADAM2_LR)
-    print(f"\nStage 2  Adam  lr={ADAM2_LR}  steps={ADAM2_STEPS}")
-    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}")
-    for step in range(ADAM2_STEPS):
-        if ADAPTIVE_LAMBDA and step % 50 == 0 and step > 0:
-            lam = adaptive_lambda(gen, model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
-        opt2.zero_grad()
-        loss, pde, bc = loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
-        loss.backward()
-        opt2.step()
+    # ── Adam with optional cosine annealing ────────────────────────────────
+    opt = torch.optim.Adam(params, lr=ADAM_LR)
+    sched = (torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=ADAM_STEPS, eta_min=COSINE_ETA_MIN)
+             if COSINE_ANNEAL else None)
+    lr_end = COSINE_ETA_MIN if COSINE_ANNEAL else ADAM_LR
+    print(f"\nAdam  lr={ADAM_LR}→{lr_end}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
+    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}  {'lr':>10}")
+    for step in range(ADAM_STEPS):
+        total, pde, bc = _step(opt, step)
+        if sched: sched.step()
         if step % LOG_EVERY == 0:
-            print(f"{step:6d}  {loss.item():12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.2f}")
+            lr_now = opt.param_groups[0]["lr"]
+            print(f"{step:6d}  {total:12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.4f}  {lr_now:.2e}")
 
-    # ── Stage 3: L-BFGS (short cleanup) ────────────────────────────────────
-    opt2    = torch.optim.LBFGS(params, lr=LBFGS_LR, max_iter=LBFGS_MAX_ITER,
+    # ── Stage 3: L-BFGS ────────────────────────────────────────────────────
+    opt3    = torch.optim.LBFGS(params, lr=LBFGS_LR, max_iter=LBFGS_MAX_ITER,
                                  history_size=10, line_search_fn="strong_wolfe")
     counter = [0]
-    print(f"\nStage 2  L-BFGS  lr={LBFGS_LR}  steps={LBFGS_STEPS}")
+    print(f"\nL-BFGS  lr={LBFGS_LR}  steps={LBFGS_STEPS}")
     print(f"{'closure':>7}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}")
 
     def closure() -> torch.Tensor:
         nonlocal lam
-        opt2.zero_grad()
-        if ADAPTIVE_LAMBDA and counter[0] % 100 == 0 and counter[0] > 0:
-            lam = adaptive_lambda(gen, model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
-        loss, pde, bc = loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
+        opt3.zero_grad()
+        pde, bc = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
+        if ADAPTIVE_LAMBDA and counter[0] % ADAPT_EVERY == 0:
+            lam = adaptive_lambda(pde, bc, params, lam, ALPHA)
+        loss = pde + lam * bc
         loss.backward()
         if counter[0] % (LOG_EVERY * 2) == 0:
-            print(f"{counter[0]:7d}  {loss.item():12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.2f}")
+            print(f"{counter[0]:7d}  {loss.item():12.7f}  {pde.item():12.7f}  {bc.item():12.7f}  {lam:8.4f}")
         counter[0] += 1
         return loss
 
     for _ in range(LBFGS_STEPS):
-        opt2.step(closure)
+        opt3.step(closure)
 
     # ── Save ────────────────────────────────────────────────────────────────
     torch.save(gen.state_dict(), run_dir / "q_weights.pt")
