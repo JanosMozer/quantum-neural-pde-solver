@@ -71,7 +71,7 @@ class MPSGenerator(nn.Module):
 
 
 if __name__ == "__main__":
-    for target, out_dim in [(418, 418), (1000, 418)]:
+    for target, out_dim in [(82, 418), (418, 418), (1000, 418)]:
         gen = MPSGenerator(out_dim=out_dim, target_param_count=target)
         out = gen()
         assert out.shape == (out_dim,), f"expected ({out_dim},), got {out.shape}"
