@@ -2,11 +2,11 @@ venv/
 .venv/
 data/
 .claude/
-__pycache__/
+**/__pycache__/
 *.pyc
 *.egg-info/
 THEORY.md
-checkpoints/run_*/
 !checkpoints/.gitkeep
 *.pt
 *.png
+uv.lock

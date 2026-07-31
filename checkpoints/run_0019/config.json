@@ -1,0 +1,12 @@
+{
+  "run_id": "run_0019",
+  "seed": 0,
+  "n_colloc": 512,
+  "n_bc": 64,
+  "adam_lr": 0.005,
+  "adam_steps": 3000,
+  "lbfgs_lr": 0.1,
+  "lbfgs_steps": 0,
+  "lambda_bc_init": 5.0,
+  "lambda_bc_final": 5.0
+}

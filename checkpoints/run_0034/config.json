@@ -1,0 +1,12 @@
+{
+  "run_id": "run_0034",
+  "generator": "learned_proj",
+  "seed": 0,
+  "n_colloc": 1024,
+  "n_bc": 512,
+  "adam_lr": 0.01,
+  "adam_steps": 10000,
+  "lambda_bc_init": 5.0,
+  "lambda_bc_final": 5.0,
+  "cosine": true
+}

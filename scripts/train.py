@@ -27,8 +27,9 @@ ADAM_STEPS      = _cfg["adam"]["steps"]
 LBFGS_LR        = _cfg["lbfgs"]["lr"]
 LBFGS_STEPS     = _cfg["lbfgs"]["steps"]
 LBFGS_MAX_ITER  = _cfg["lbfgs"]["max_iter"]
-COSINE_ANNEAL   = _cfg.get("cosine_annealing", False)  # CosineAnnealingLR on stage 1 & 2
-COSINE_ETA_MIN  = _cfg.get("cosine_eta_min", 1e-5)     # minimum lr at end of cosine cycle
+COSINE_ANNEAL   = _cfg.get("cosine_annealing", False)
+COSINE_ETA_MIN  = _cfg.get("cosine_eta_min", 1e-5)
+WARMUP_STEPS    = _cfg.get("warmup_steps", 0)          # linear warmup before cosine
 
 
 def _next_run_dir(base: Path = Path("checkpoints")) -> tuple[str, Path]:
@@ -109,12 +110,19 @@ def main() -> None:
         opt.step()
         return loss.item(), pde.item(), bc.item()
 
-    # ── Adam with optional cosine annealing ────────────────────────────────
+    # ── Adam with optional warmup + cosine annealing ───────────────────────
     opt = torch.optim.Adam(params, lr=ADAM_LR)
-    sched = (torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=ADAM_STEPS, eta_min=COSINE_ETA_MIN)
-             if COSINE_ANNEAL else None)
+    if COSINE_ANNEAL:
+        warmup = torch.optim.lr_scheduler.LinearLR(
+            opt, start_factor=1e-3, end_factor=1.0, total_iters=max(WARMUP_STEPS, 1))
+        cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt, T_max=max(ADAM_STEPS - WARMUP_STEPS, 1), eta_min=COSINE_ETA_MIN)
+        sched = torch.optim.lr_scheduler.SequentialLR(
+            opt, schedulers=[warmup, cosine], milestones=[WARMUP_STEPS])
+    else:
+        sched = None
     lr_end = COSINE_ETA_MIN if COSINE_ANNEAL else ADAM_LR
-    print(f"\nAdam  lr={ADAM_LR}→{lr_end}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
+    print(f"\nAdam  lr=0→{ADAM_LR}→{lr_end}  warmup={WARMUP_STEPS}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
     print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}  {'lr':>10}")
     for step in range(ADAM_STEPS):
         total, pde, bc = _step(opt, step)
@@ -146,6 +154,12 @@ def main() -> None:
     for _ in range(LBFGS_STEPS):
         opt3.step(closure)
 
+    # ── Final eval ───────────────────────────────────────────────────────────
+    with torch.no_grad():
+        pde_f, bc_f = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
+    pde_final = pde_f.item(); bc_final = bc_f.item()
+    print(f"\nFinal  pde={pde_final:.7f}  bc={bc_final:.7f}  sum={pde_final+bc_final:.7f}")
+
     # ── Save ────────────────────────────────────────────────────────────────
     torch.save(gen.state_dict(), run_dir / "q_weights.pt")
     (run_dir / "config.json").write_text(json.dumps({
@@ -154,8 +168,17 @@ def main() -> None:
         "lbfgs_lr": LBFGS_LR, "lbfgs_steps": LBFGS_STEPS,
         "lambda_bc_init": LAMBDA_BC, "lambda_bc_final": round(lam, 4),
     }, indent=2))
-    print(f"\nSaved  {run_dir}/q_weights.pt")
+    (run_dir / "results.json").write_text(json.dumps({
+        "run_id": run_id,
+        "pde_loss": round(pde_final, 8),
+        "bc_loss":  round(bc_final, 8),
+        "total":    round(pde_final + bc_final, 8),
+        "lambda_final": round(lam, 6),
+        "n_params": sum(p.numel() for p in gen.parameters()),
+    }, indent=2))
+    print(f"Saved  {run_dir}/q_weights.pt")
     print(f"       {run_dir}/config.json")
+    print(f"       {run_dir}/results.json")
 
 
 if __name__ == "__main__":

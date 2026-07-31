@@ -5,6 +5,7 @@ from pathlib import Path
 import argparse
 import torch
 from qt_pinn.qnn_generator import QuantumWeightGenerator
+from qt_pinn.learned_proj.qnn_generator import QuantumWeightGeneratorLP
 
 
 def _latest(base: Path = Path("checkpoints")) -> str:
@@ -18,12 +19,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run", default="latest",
                         help="run ID (e.g. run_0001) or 'latest'")
+    parser.add_argument("--lp", action="store_true",
+                        help="use learned-projection generator (train_lp.py runs)")
     args = parser.parse_args()
 
     run_id  = _latest() if args.run == "latest" else args.run
     run_dir = Path("checkpoints") / run_id
 
-    gen = QuantumWeightGenerator()
+    gen = QuantumWeightGeneratorLP() if args.lp else QuantumWeightGenerator()
     gen.load_state_dict(torch.load(run_dir / "q_weights.pt", map_location="cpu", weights_only=True))
     gen.eval()
 
