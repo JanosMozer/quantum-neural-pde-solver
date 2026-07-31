@@ -44,13 +44,13 @@ class FlatToWeightDict(torch.nn.Module):
         }
 
 
-def build_generator(name: str) -> torch.nn.Module:
+def build_generator(name: str, mps_target: int = OPTION1_PARAMS) -> torch.nn.Module:
     if name == "option1":
         return QuantumWeightGenerator(seed=0)
     if name == "low_rank":
         return FlatToWeightDict(LowRankGenerator(out_dim=TOTAL_WEIGHTS, target_param_count=OPTION1_PARAMS))
     if name == "mps":
-        return FlatToWeightDict(MPSGenerator(out_dim=TOTAL_WEIGHTS, target_param_count=OPTION1_PARAMS))
+        return FlatToWeightDict(MPSGenerator(out_dim=TOTAL_WEIGHTS, target_param_count=mps_target))
     raise ValueError(f"unknown generator {name!r}")
 
 
@@ -80,11 +80,16 @@ def main() -> None:
     parser.add_argument("--n_colloc", type=int, default=1024)
     parser.add_argument("--n_bc", type=int, default=1024)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--holdout", action="store_true",
+                         help="also evaluate on a large, never-trained-on set (step 4a)")
+    parser.add_argument("--holdout_n", type=int, default=4096)
+    parser.add_argument("--mps_target", type=int, default=OPTION1_PARAMS,
+                         help="only affects generator=mps; step C bond-dim robustness sweep")
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
     model = TargetPINN()
-    gen = build_generator(args.generator)
+    gen = build_generator(args.generator, mps_target=args.mps_target)
     params = list(gen.parameters())
     n_params = sum(p.numel() for p in params)
 
@@ -118,9 +123,25 @@ def main() -> None:
     print(f"\nFinal  pde={result['pde_loss']:.7f}  bc={result['bc_loss']:.7f}  sum={result['total']:.7f}  "
           f"({elapsed:.1f}s)")
 
+    # ── Step 4a: held-out generalization check ──────────────────────────────
+    # Weights are frozen (no opt.step() below); a large, never-trained-on set with a
+    # seed offset guaranteed disjoint from any training seed used in this sweep.
+    if args.holdout:
+        xh, yh, th = make_colloc(args.holdout_n, args.seed + 90000)
+        xhb, yhb, thb, uhb, vhb = make_bc(args.holdout_n, args.seed + 90000)
+        w_final = gen()
+        pde_h, bc_h = compute_burgers_loss(model, xh, yh, th, xhb, yhb, thb, uhb, vhb, w_final)
+        result["holdout_n"] = args.holdout_n
+        result["holdout_pde_loss"] = round(pde_h.item(), 8)
+        result["holdout_bc_loss"] = round(bc_h.item(), 8)
+        result["holdout_total"] = round(pde_h.item() + bc_h.item(), 8)
+        print(f"Held-out (n={args.holdout_n})  pde={result['holdout_pde_loss']:.7f}  "
+              f"bc={result['holdout_bc_loss']:.7f}  sum={result['holdout_total']:.7f}")
+
     out_dir = Path(__file__).resolve().parent / "results"
     out_dir.mkdir(exist_ok=True)
-    out_path = out_dir / f"{args.generator}_seed{args.seed}.json"
+    suffix = f"_mpstarget{args.mps_target}" if args.generator == "mps" and args.mps_target != OPTION1_PARAMS else ""
+    out_path = out_dir / f"{args.generator}_seed{args.seed}{suffix}.json"
     out_path.write_text(json.dumps(result, indent=2))
     print(f"Saved {out_path}")
 
