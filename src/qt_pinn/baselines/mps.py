@@ -56,9 +56,14 @@ class MPSGenerator(nn.Module):
         self.num_sites = num_sites
         self.bond_dim = bond_dim
 
+        # quimb's MPS_rand_state already normalizes the overall contracted state to unit
+        # norm; scaling each of the num_sites tensors individually (previously *0.1) compounds
+        # multiplicatively across the contraction (0.1**num_sites), collapsing both the output
+        # and its gradient to numerical zero for any num_sites much above a handful. Use
+        # quimb's own init unscaled.
         seed_mps = qtn.MPS_rand_state(L=num_sites, bond_dim=bond_dim, dtype="float64")
         self.tensors = nn.ParameterList([
-            nn.Parameter(torch.tensor(t.data.copy(), dtype=torch.float64) * 0.1)
+            nn.Parameter(torch.tensor(t.data.copy(), dtype=torch.float64))
             for t in seed_mps.tensors
         ])
 
@@ -82,7 +87,11 @@ if __name__ == "__main__":
         loss.backward()
         grads = [p.grad for p in gen.parameters()]
         assert all(g is not None for g in grads), "missing gradient"
-        assert all(torch.any(g != 0) for g in grads), "zero gradient"
+        # not just nonzero: catches the real bug found 2026-07-31, a compounding *0.1
+        # per-tensor init scale that left gradients technically nonzero but ~1e-8, dead
+        # in practice. 1e-4 is well above float32 training noise, well below a healthy signal.
+        assert all(g.norm().item() > 1e-4 for g in grads), "gradient too small to be useful, not just nonzero"
+        assert out.std().item() > 1e-4, "output magnitude too small to be useful"
         print(f"PASS target={target} out_dim={out_dim}: num_sites={gen.num_sites} "
               f"bond_dim={gen.bond_dim} actual_params={actual} (rel err {rel_err:.2%}), "
               f"shape ok, gradients ok")
