@@ -116,6 +116,7 @@ def main_lp() -> None:
         "adam_lr": ADAM_LR, "adam_steps": ADAM_STEPS,
         "lambda_bc_init": LAMBDA_BC, "lambda_bc_final": round(lam, 4),
         "cosine": COSINE_ANNEAL, "weight_decay": WEIGHT_DECAY,
+        "bottleneck_width": gen.proj[0].out_features,  # was unrecoverable except by reverse-engineering param counts
     }, indent=2))
     (run_dir / "results.json").write_text(json.dumps({
         "run_id": run_id,
