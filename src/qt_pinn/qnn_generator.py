@@ -1,13 +1,9 @@
 """Quantum Weight Generator using PennyLane StronglyEntanglingLayers."""
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
 import torch
 import torch.nn as nn
 import pennylane as qml
-from training.config_loader import load as _load
+from qt_pinn.config_loader import load as _load
 
 _cfg = _load()
 _q   = _cfg["quantum"]

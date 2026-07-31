@@ -1,12 +1,10 @@
-"""Load q_weights.pt from a run, produce static float weights, save to same run dir."""
+"""Load q_weights.pt from a run, produce static float weights, save to same run dir. Run from the repo root."""
 
-import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import argparse
 import torch
-from training.qnn_generator import QuantumWeightGenerator
+from qt_pinn.qnn_generator import QuantumWeightGenerator
 
 
 def _latest(base: Path = Path("checkpoints")) -> str:

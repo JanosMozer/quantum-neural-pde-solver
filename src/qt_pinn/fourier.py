@@ -1,12 +1,8 @@
 """Fourier feature map: (B, 3) -> (B, 6)."""
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
 import torch
 import torch.nn as nn
-from training.config_loader import load as _load
+from qt_pinn.config_loader import load as _load
 
 _f = _load()["fourier"]
 
