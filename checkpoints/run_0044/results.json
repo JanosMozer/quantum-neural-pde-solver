@@ -1,0 +1,8 @@
+{
+  "run_id": "run_0044",
+  "pde_loss": 0.05419458,
+  "bc_loss": 0.05026085,
+  "total": 0.10445543,
+  "lambda_final": 5.0,
+  "n_params": 214515
+}

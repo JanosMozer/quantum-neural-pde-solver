@@ -15,11 +15,11 @@ physics:
 
 training:
   seed:     0
-  n_colloc: 1024   # PDE interior collocation points
-  n_bc:     1024   # boundary / IC points
+  n_colloc: 512
+  n_bc:     128
 
   # ── Lambda — Wang et al. 2020 arXiv:2001.04536 ───────────────────────────
-  lambda_bc:             15.0    # initial λ
+  lambda_bc:             7.0     # between λ=5 (pde best) and λ=10 (bc best)
   adaptive_lambda:       false  # true = auto-tune via gradient norm ratio
   adaptive_lambda_alpha: 0.9    # EMA momentum (paper: 0.9)
   adaptive_lambda_every: 1      # update every N steps
@@ -29,13 +29,14 @@ training:
   # ── LR schedule ──────────────────────────────────────────────────────────
   cosine_annealing: true     # CosineAnnealingLR after warmup
   cosine_eta_min:   1.0e-5   # minimum lr at end of cycle
-  warmup_steps:     1000      # linear warmup: lr goes 0 → adam.lr over this many steps
+  warmup_steps:     0      # linear warmup: lr goes 0 → adam.lr over this many steps
 
   log_every: 500
 
   adam:
     lr:    0.01   # peak lr; cosine decays to cosine_eta_min over adam.steps
-    steps: 15000    # total steps (replaces separate adam2 stage)
+    steps: 18000
+    weight_decay: 1.0e-3   # L2 regularisation on proj layer — prevents memorisation
 
   lbfgs:
     lr:       0.1

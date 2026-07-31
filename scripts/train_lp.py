@@ -24,6 +24,8 @@ from scripts.train import (
     COSINE_ANNEAL, COSINE_ETA_MIN, WARMUP_STEPS,
     _next_run_dir, make_colloc, make_bc, forward_losses, adaptive_lambda,
 )
+from qt_pinn.config_loader import load as _cfg_lp
+WEIGHT_DECAY = _cfg_lp()["training"]["adam"].get("weight_decay", 0.0)
 
 
 def main_lp() -> None:
@@ -38,9 +40,9 @@ def main_lp() -> None:
     gen    = QuantumWeightGenerator()
     params = list(gen.parameters())
 
-    n_q = gen.q_weights.numel()
-    n_p = gen.proj.weight.numel() + gen.proj.bias.numel()
-    print(f"Params: {n_q + n_p:,}  (circuit={n_q}, proj={n_p})")
+    n_total = sum(p.numel() for p in gen.parameters())
+    n_q     = gen.q_weights.numel()
+    print(f"Params: {n_total:,}  (circuit={n_q}, proj={n_total - n_q})")
 
     x, y, t               = make_colloc(N_COLLOC)
     x_bc, y_bc, t_bc, u_bc, v_bc = make_bc(N_BC)
@@ -59,7 +61,7 @@ def main_lp() -> None:
         return loss.item(), pde.item(), bc.item()
 
     # ── Adam with optional warmup + cosine annealing ───────────────────────
-    opt = torch.optim.Adam(params, lr=ADAM_LR)
+    opt = torch.optim.Adam(params, lr=ADAM_LR, weight_decay=WEIGHT_DECAY)
     if COSINE_ANNEAL:
         warmup = torch.optim.lr_scheduler.LinearLR(
             opt, start_factor=1e-3, end_factor=1.0, total_iters=max(WARMUP_STEPS, 1))
@@ -102,8 +104,7 @@ def main_lp() -> None:
             opt3.step(closure)
 
     # ── Final eval ───────────────────────────────────────────────────────────
-    with torch.no_grad():
-        pde_f, bc_f = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
+    pde_f, bc_f = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
     pde_final = pde_f.item(); bc_final = bc_f.item()
     print(f"\nFinal  pde={pde_final:.7f}  bc={bc_final:.7f}  sum={pde_final+bc_final:.7f}")
 
@@ -114,7 +115,7 @@ def main_lp() -> None:
         "seed": SEED, "n_colloc": N_COLLOC, "n_bc": N_BC,
         "adam_lr": ADAM_LR, "adam_steps": ADAM_STEPS,
         "lambda_bc_init": LAMBDA_BC, "lambda_bc_final": round(lam, 4),
-        "cosine": COSINE_ANNEAL,
+        "cosine": COSINE_ANNEAL, "weight_decay": WEIGHT_DECAY,
     }, indent=2))
     (run_dir / "results.json").write_text(json.dumps({
         "run_id": run_id,

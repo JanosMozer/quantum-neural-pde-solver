@@ -155,8 +155,7 @@ def main() -> None:
         opt3.step(closure)
 
     # ── Final eval ───────────────────────────────────────────────────────────
-    with torch.no_grad():
-        pde_f, bc_f = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
+    pde_f, bc_f = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
     pde_final = pde_f.item(); bc_final = bc_f.item()
     print(f"\nFinal  pde={pde_final:.7f}  bc={bc_final:.7f}  sum={pde_final+bc_final:.7f}")
 

@@ -28,7 +28,12 @@ class QuantumWeightGeneratorLP(nn.Module):
         super().__init__()
         q_shape = (N_LAYERS, N_QUBITS, 3)
         self.q_weights = nn.Parameter(torch.randn(q_shape) * 0.1)
-        self.proj      = nn.Linear(N_STATES, TOTAL_WEIGHTS)
+        # bottleneck projection: 512 → 64 → 418  (~33K params vs 214K flat)
+        self.proj = nn.Sequential(
+            nn.Linear(N_STATES, 64),
+            nn.Tanh(),
+            nn.Linear(64, TOTAL_WEIGHTS),
+        )
 
     def forward(self, inputs: torch.Tensor | None = None) -> dict[str, torch.Tensor]:
         if inputs is None:
