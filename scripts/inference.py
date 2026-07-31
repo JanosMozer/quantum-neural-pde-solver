@@ -8,6 +8,9 @@ import argparse, time, math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import numpy as np
 
 # ── MLP dims (must match qnn_generator.py) ──────────────────────────────────
 IN_DIM  = 6    # Fourier feature width
@@ -82,9 +85,6 @@ def plot_solution(
     n_points: int = 300,    # x resolution per curve
 ) -> None:
     """Plot u and v along x at a fixed y for multiple time snapshots."""
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-    import numpy as np
 
     x = torch.linspace(-1, 1, n_points)
     y = torch.full((n_points,), y_slice)
@@ -140,7 +140,7 @@ def main() -> None:
 
     with torch.no_grad():
         pred = model(torch.tensor([0.5]), torch.tensor([0.3]), torch.tensor([0.1]))
-    print(f"[{run_id}]  x=0.5 y=0.3 t=0.1  →  u={pred[0,0]:.4f}  v={pred[0,1]:.4f}")
+    print(f"[{run_id}]  x=0.5 y=0.3 t=0.1  →  u={pred[0,0]:.6f}  v={pred[0,1]:.6f}")
     print(f"Latency: {benchmark(model):.3f} ms / batch-1000")
 
     if not args.no_plot:

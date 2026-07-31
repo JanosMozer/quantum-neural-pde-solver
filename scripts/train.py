@@ -18,9 +18,12 @@ SEED            = _cfg["seed"]
 N_COLLOC        = _cfg["n_colloc"]
 N_BC            = _cfg["n_bc"]
 LAMBDA_BC       = _cfg["lambda_bc"]
+ADAPTIVE_LAMBDA = _cfg.get("adaptive_lambda", True)   # disable to fix lambda
 LOG_EVERY       = _cfg["log_every"]
 ADAM_LR         = _cfg["adam"]["lr"]
 ADAM_STEPS      = _cfg["adam"]["steps"]
+ADAM2_LR        = _cfg["adam2"]["lr"]
+ADAM2_STEPS     = _cfg["adam2"]["steps"]
 LBFGS_LR        = _cfg["lbfgs"]["lr"]
 LBFGS_STEPS     = _cfg["lbfgs"]["steps"]
 LBFGS_MAX_ITER  = _cfg["lbfgs"]["max_iter"]
@@ -52,10 +55,26 @@ def make_bc(n: int) -> tuple[torch.Tensor, ...]:
     return x, y, t, u, v
 
 
-def loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc) -> tuple[torch.Tensor, float, float]:
+def _grad_norm(loss: torch.Tensor, params: list) -> float:
+    gs = torch.autograd.grad(loss, params, retain_graph=True, allow_unused=True)
+    return torch.stack([g.norm() for g in gs if g is not None]).mean().item()
+
+
+def adaptive_lambda(gen, model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc,
+                    current: float, alpha: float = 0.9) -> float:
+    """Gradient-norm ratio λ = ‖∇pde‖ / ‖∇bc‖, smoothed with EMA α."""
+    params = [p for p in gen.parameters() if p.requires_grad]
+    w = gen()
+    pde, bc = compute_burgers_loss(model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, w)
+    new_lam = _grad_norm(pde, params) / (_grad_norm(bc, params) + 1e-8)
+    return alpha * current + (1 - alpha) * new_lam   # EMA — prevents jumping
+
+
+def loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc,
+            lam: float) -> tuple[torch.Tensor, float, float]:
     weights = gen()
     pde, bc = compute_burgers_loss(model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, weights)
-    return pde + LAMBDA_BC * bc, pde.item(), bc.item()
+    return pde + lam * bc, pde.item(), bc.item()
 
 
 def main() -> None:
@@ -67,37 +86,59 @@ def main() -> None:
     print(f"Run: {run_id}  →  {run_dir}/")
 
     model  = TargetPINN()
-    gen    = QuantumWeightGenerator()
+    gen    = QuantumWeightGenerator(seed=_load_cfg()["quantum"].get("partition_seed", 0))
     params = list(gen.parameters())
 
     x, y, t                  = make_colloc(N_COLLOC)
     x_bc, y_bc, t_bc, u_bc, v_bc = make_bc(N_BC)
 
+    lam = float(LAMBDA_BC)   # mutable lambda, starts from config value
+
     # ── Stage 1: Adam ──────────────────────────────────────────────────────
     opt = torch.optim.Adam(params, lr=ADAM_LR)
     print(f"\nStage 1  Adam  lr={ADAM_LR}  steps={ADAM_STEPS}")
-    print(f"{'step':>6}  {'total':>10}  {'pde':>10}  {'bc':>10}")
+    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}")
     for step in range(ADAM_STEPS):
+        # adaptive lambda every 50 steps
+        if ADAPTIVE_LAMBDA and step % 50 == 0 and step > 0:
+            lam = adaptive_lambda(gen, model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
         opt.zero_grad()
-        loss, pde, bc = loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
+        loss, pde, bc = loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
         loss.backward()
         opt.step()
         if step % LOG_EVERY == 0:
-            print(f"{step:6d}  {loss.item():10.5f}  {pde:10.5f}  {bc:10.5f}")
+            print(f"{step:6d}  {loss.item():12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.2f}")
 
-    # ── Stage 2: L-BFGS ────────────────────────────────────────────────────
+    # ── Stage 2: Adam (fine refinement) ────────────────────────────────────
+    opt2 = torch.optim.Adam(params, lr=ADAM2_LR)
+    print(f"\nStage 2  Adam  lr={ADAM2_LR}  steps={ADAM2_STEPS}")
+    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}")
+    for step in range(ADAM2_STEPS):
+        if ADAPTIVE_LAMBDA and step % 50 == 0 and step > 0:
+            lam = adaptive_lambda(gen, model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
+        opt2.zero_grad()
+        loss, pde, bc = loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
+        loss.backward()
+        opt2.step()
+        if step % LOG_EVERY == 0:
+            print(f"{step:6d}  {loss.item():12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.2f}")
+
+    # ── Stage 3: L-BFGS (short cleanup) ────────────────────────────────────
     opt2    = torch.optim.LBFGS(params, lr=LBFGS_LR, max_iter=LBFGS_MAX_ITER,
                                  history_size=10, line_search_fn="strong_wolfe")
     counter = [0]
     print(f"\nStage 2  L-BFGS  lr={LBFGS_LR}  steps={LBFGS_STEPS}")
-    print(f"{'closure':>7}  {'total':>10}  {'pde':>10}  {'bc':>10}")
+    print(f"{'closure':>7}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}")
 
     def closure() -> torch.Tensor:
+        nonlocal lam
         opt2.zero_grad()
-        loss, pde, bc = loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
+        if ADAPTIVE_LAMBDA and counter[0] % 100 == 0 and counter[0] > 0:
+            lam = adaptive_lambda(gen, model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
+        loss, pde, bc = loss_fn(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, lam)
         loss.backward()
         if counter[0] % (LOG_EVERY * 2) == 0:
-            print(f"{counter[0]:7d}  {loss.item():10.5f}  {pde:10.5f}  {bc:10.5f}")
+            print(f"{counter[0]:7d}  {loss.item():12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.2f}")
         counter[0] += 1
         return loss
 
@@ -109,7 +150,8 @@ def main() -> None:
     (run_dir / "config.json").write_text(json.dumps({
         "run_id": run_id, "seed": SEED, "n_colloc": N_COLLOC, "n_bc": N_BC,
         "adam_lr": ADAM_LR, "adam_steps": ADAM_STEPS,
-        "lbfgs_lr": LBFGS_LR, "lbfgs_steps": LBFGS_STEPS, "lambda_bc": LAMBDA_BC,
+        "lbfgs_lr": LBFGS_LR, "lbfgs_steps": LBFGS_STEPS,
+        "lambda_bc_init": LAMBDA_BC, "lambda_bc_final": round(lam, 4),
     }, indent=2))
     print(f"\nSaved  {run_dir}/q_weights.pt")
     print(f"       {run_dir}/config.json")

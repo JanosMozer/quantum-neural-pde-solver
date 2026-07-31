@@ -2,3 +2,7 @@ venv/
 data/
 .claude/
 __pycache__/
+THEORY.md
+checkpoints/
+*.pt
+*.png

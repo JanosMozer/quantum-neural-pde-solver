@@ -1,36 +1,34 @@
-# ── Fourier Feature Map ──────────────────────────────────────────────────────
 fourier:
   sigma: 1.0      # std-dev of Gaussian frequency matrix B; higher = higher-freq features
   seed:  42       # fixed RNG seed; must be identical at train and inference time
 
-# ── Quantum Circuit ───────────────────────────────────────────────────────────
 quantum:
-  n_qubits: 6     # circuit width; each qubit contributes one Pauli-Z readout
-  n_layers: 2     # StronglyEntanglingLayers depth; more = expressive but slower on CPU
-
-# ── MLP Architecture ─────────────────────────────────────────────────────────
+  n_layers:      3   # circuit depth; more = expressive; re-uploading applied between each layer
+  partition_seed: 0  # seed for fixed random basis assignment; try 1,2,42 if stuck
 mlp:
-  hidden: [16, 16]  # widths of the two hidden layers [H1, H2]
-  # in_dim is derived: 2 * n_qubits (sin + cos Fourier features)
-  # out_dim is fixed: 2 (u and v velocity components)
+  hidden: [16, 16]  # [H1, H2]; changing this changes total_weights and thus n_qubits
+  # in_dim = 6 (fixed: 2 × fourier.n_freqs); out_dim = 2 (u, v)
 
-# ── Physics ───────────────────────────────────────────────────────────────────
 physics:
   nu: 0.003183    # kinematic viscosity ν = 0.01/π ≈ 0.003183; lower = sharper gradients
 
-# ── Training ─────────────────────────────────────────────────────────────────
 training:
-  seed:      0      # global RNG seed for data sampling
-  n_colloc:  128    # PDE interior collocation points per step (more = accurate, slower)
-  n_bc:      32     # boundary / initial-condition training points
-  lambda_bc: 50.0   # BC loss weight relative to PDE loss; increase if BC not satisfied
-  log_every: 25     # print loss every N steps
+  seed:            0      # global RNG seed for data sampling
+  n_colloc:        512    # PDE interior collocation points (more = accurate, slower)
+  n_bc:            128     # boundary / IC points; increase if bc stays high
+  lambda_bc:       1.0   # BC loss weight
+  adaptive_lambda: false  # true = auto-tune λ via gradient norm ratio
+  log_every:       500    # print every N steps
 
   adam:
-    lr:    0.01   # learning rate
-    steps: 300    # gradient steps
+    lr:    0.005   # stage 1 learning rate
+    steps: 3000    # stage 1 steps
+
+  adam2:           # second Adam phase replaces L-BFGS (more stable for probs landscape)
+    lr:    0.001   # lower lr for fine refinement
+    steps: 3000    # stage 2 steps
 
   lbfgs:
-    lr:       0.1   # line-search step size
-    steps:    200    # outer L-BFGS iterations
-    max_iter: 20    # inner CG iterations per step (each calls closure; total ≈ steps×max_iter)
+    lr:       0.1
+    steps:    0   # kept short; only runs if loss still high after both Adam phases
+    max_iter: 10
