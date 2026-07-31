@@ -1,8 +1,12 @@
 venv/
+.venv/
 data/
 .claude/
 __pycache__/
+*.pyc
+*.egg-info/
 THEORY.md
-checkpoints/
+checkpoints/run_*/
+!checkpoints/.gitkeep
 *.pt
 *.png

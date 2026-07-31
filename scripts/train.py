@@ -1,16 +1,14 @@
-"""2-stage training: Adam -> L-BFGS. Saves run to checkpoints/run_NNNN/."""
+"""2-stage training: Adam -> L-BFGS. Saves run to checkpoints/run_NNNN/. Run from the repo root."""
 
-import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # project root
 
 import json
 import torch
 import numpy as np
-from training.config_loader import load as _load_cfg
-from training.pinn_target import TargetPINN
-from training.qnn_generator import QuantumWeightGenerator
-from training.physics_loss import compute_burgers_loss
+from qt_pinn.config_loader import load as _load_cfg
+from qt_pinn.pinn_target import TargetPINN
+from qt_pinn.qnn_generator import QuantumWeightGenerator
+from qt_pinn.physics_loss import compute_burgers_loss
 
 # ── Load all parameters from config.yaml ────────────────────────────────────
 _cfg            = _load_cfg()["training"]

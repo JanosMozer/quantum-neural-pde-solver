@@ -1,12 +1,8 @@
 """Physics loss for 2D viscous Burgers' equation via automatic differentiation."""
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
 import torch
 import torch.nn as nn
-from training.config_loader import load as _load
+from qt_pinn.config_loader import load as _load
 
 NU = _load()["physics"]["nu"]   # kinematic viscosity; lower = sharper gradients
 
@@ -78,11 +74,8 @@ def compute_burgers_loss(
 
 
 if __name__ == "__main__":
-    import sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from training.pinn_target import TargetPINN
-    from training.qnn_generator import QuantumWeightGenerator
+    from qt_pinn.pinn_target import TargetPINN
+    from qt_pinn.qnn_generator import QuantumWeightGenerator
 
     model = TargetPINN()
     gen = QuantumWeightGenerator()

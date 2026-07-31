@@ -1,8 +1,6 @@
 """Pure classical inference (no PennyLane). Loads static_weights.pt, measures latency."""
 
-import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import argparse, time, math
 import torch

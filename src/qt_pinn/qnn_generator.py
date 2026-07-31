@@ -9,14 +9,11 @@ For M=418: N=9, 2^9=512, N_PAIRED=94, N_SINGLE=324.
 Data re-uploading: input re-encoded between every variational layer.
 """
 
-import sys, math
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
+import math
 import torch
 import torch.nn as nn
 import pennylane as qml
-from training.config_loader import load as _load
+from qt_pinn.config_loader import load as _load
 
 _cfg = _load()
 _m   = _cfg["mlp"]
@@ -69,7 +66,7 @@ class QuantumWeightGenerator(nn.Module):
         # ── Learnable: circuit angles + scale scalar ──────────────────────────
         q_shape = qml.StronglyEntanglingLayers.shape(n_layers=N_LAYERS, n_wires=N_QUBITS)
         self.q_weights = nn.Parameter(torch.randn(q_shape) * 0.1)  # gate angles
-        self.gamma     = nn.Parameter(torch.tensor(1.0))            # weight magnitude; 1.0 gives ~0.47 at uniform probs
+        self.gamma     = nn.Parameter(torch.tensor(1.0))            # weight magnitude
 
         # ── Fixed: random basis assignment (never updated) ────────────────────
         perm = torch.randperm(N_STATES)
@@ -101,15 +98,3 @@ class QuantumWeightGenerator(nn.Module):
         return {"W1": flat[:W1_SIZE],
                 "W2": flat[W1_SIZE: W1_SIZE + W2_SIZE],
                 "W3": flat[W1_SIZE + W2_SIZE:]}
-
-
-if __name__ == "__main__":
-    gen = QuantumWeightGenerator()
-    w = gen()
-    assert w["W1"].shape == (W1_SIZE,)
-    assert w["W2"].shape == (W2_SIZE,)
-    assert w["W3"].shape == (W3_SIZE,)
-    n_params = sum(p.numel() for p in gen.parameters())
-    print(f"PASS  W1={w['W1'].shape} W2={w['W2'].shape} W3={w['W3'].shape}")
-    print(f"Trainable params: {n_params}  (q_weights={gen.q_weights.numel()} + gamma=1)")
-    print(f"N_QUBITS={N_QUBITS}  N_STATES={N_STATES}  N_PAIRED={N_PAIRED}  N_SINGLE={N_SINGLE}")
