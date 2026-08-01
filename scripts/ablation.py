@@ -60,7 +60,9 @@ def build_generators(device: torch.device) -> tuple[dict[str, torch.nn.Module], 
 
 
 def run_one(name: str, gen: torch.nn.Module, model: torch.nn.Module, steps: int,
-            x, y, t, xb, yb, tb, ub, vb, xh, yh, th, xhb, yhb, thb, uhb, vhb) -> dict:
+            train_data: tuple, holdout_data: tuple) -> dict:
+    x, y, t, xb, yb, tb, ub, vb = train_data
+    xh, yh, th, xhb, yhb, thb, uhb, vhb = holdout_data
     params = list(gen.parameters())
     n_params = sum(p.numel() for p in params)
 
@@ -121,9 +123,11 @@ def main() -> None:
     torch.manual_seed(SEED)
     x, y, t = make_colloc(N_COLLOC, DEVICE)
     xb, yb, tb, ub, vb = make_bc(N_BC, DEVICE)
+    train_data = (x, y, t, xb, yb, tb, ub, vb)
     torch.manual_seed(SEED + 90000)
     xh, yh, th = make_colloc(N_COLLOC, DEVICE)
     xhb, yhb, thb, uhb, vhb = make_bc(N_BC, DEVICE)
+    holdout_data = (xh, yh, th, xhb, yhb, thb, uhb, vhb)
 
     model = TargetPINN().to(DEVICE)
     gens, n_target = build_generators(DEVICE)
@@ -135,8 +139,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     results = []
     for name in args.generators:
-        result = run_one(name, gens[name], model, args.steps,
-                          x, y, t, xb, yb, tb, ub, vb, xh, yh, th, xhb, yhb, thb, uhb, vhb)
+        result = run_one(name, gens[name], model, args.steps, train_data, holdout_data)
         results.append(result)
         torch.save(gens[name].state_dict(), out_dir / f"{name}_gen.pt")
 

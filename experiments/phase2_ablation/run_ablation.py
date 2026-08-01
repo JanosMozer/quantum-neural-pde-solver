@@ -181,7 +181,7 @@ def main() -> None:
     print(f"\nFinal  pde={result['pde_loss']:.7f}  bc={result['bc_loss']:.7f}  sum={result['total']:.7f}  "
           f"({elapsed:.1f}s)")
 
-    # ── Step 4a: held-out generalization check ──────────────────────────────
+    # Step 4a: held-out generalization check
     # Weights are frozen (no opt.step() below); a large, never-trained-on set with a
     # seed offset guaranteed disjoint from any training seed used in this sweep.
     if args.holdout:

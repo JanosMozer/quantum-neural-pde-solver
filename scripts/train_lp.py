@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-# ── swap only this import ────────────────────────────────────────────────────
+# swap only this import
 from qt_pinn.learned_proj.qnn_generator import QuantumWeightGeneratorLP as QuantumWeightGenerator
 
 import json, torch, numpy as np
@@ -22,7 +22,7 @@ from scripts.train import (
     ADAPT_EVERY, ADAPT_WARMUP, LAMBDA_MAX, LOG_EVERY,
     ADAM_LR, ADAM_STEPS, LBFGS_LR, LBFGS_STEPS, LBFGS_MAX_ITER,
     COSINE_ANNEAL, COSINE_ETA_MIN, WARMUP_STEPS,
-    _next_run_dir, make_colloc, make_bc, forward_losses, adaptive_lambda,
+    _next_run_dir, make_colloc, make_bc, forward_losses, adaptive_lambda, make_optimizer,
 )
 from qt_pinn.config_loader import load as _cfg_lp
 _t = _cfg_lp()["training"]
@@ -38,7 +38,7 @@ def main_lp() -> None:
 
     run_id, run_dir = _next_run_dir()
     run_dir.mkdir(parents=True)
-    print(f"Run (LP): {run_id}  →  {run_dir}/")
+    print(f"Run (LP): {run_id}  ->  {run_dir}/")
 
     model  = TargetPINN()
     gen    = QuantumWeightGenerator()
@@ -66,20 +66,10 @@ def main_lp() -> None:
         opt.step()
         return loss.item(), pde.item(), bc.item()
 
-    # ── Adam with optional warmup + cosine annealing ───────────────────────
-    opt = torch.optim.Adam(params, lr=ADAM_LR, weight_decay=WEIGHT_DECAY)
-    if COSINE_ANNEAL:
-        warmup = torch.optim.lr_scheduler.LinearLR(
-            opt, start_factor=1e-3, end_factor=1.0, total_iters=max(WARMUP_STEPS, 1))
-        cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
-            opt, T_max=max(ADAM_STEPS - WARMUP_STEPS, 1), eta_min=COSINE_ETA_MIN)
-        sched = torch.optim.lr_scheduler.SequentialLR(
-            opt, schedulers=[warmup, cosine], milestones=[WARMUP_STEPS])
-    else:
-        sched = None
+    opt, sched = make_optimizer(params, ADAM_LR, WEIGHT_DECAY)
     lr_end = COSINE_ETA_MIN if COSINE_ANNEAL else ADAM_LR
-    print(f"\nAdam  lr=0→{ADAM_LR}→{lr_end}  warmup={WARMUP_STEPS}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
-    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ':>8}  {'lr':>10}")
+    print(f"\nAdam  lr=0->{ADAM_LR}->{lr_end}  warmup={WARMUP_STEPS}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
+    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'lam':>8}  {'lr':>10}")
     for step in range(ADAM_STEPS):
         if RESAMPLE_EVERY > 0 and step % RESAMPLE_EVERY == 0 and step > 0:
             x, y, t = make_colloc(N_COLLOC)
@@ -90,7 +80,7 @@ def main_lp() -> None:
             lr_now = opt.param_groups[0]["lr"]
             print(f"{step:6d}  {total:12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.4f}  {lr_now:.2e}")
 
-    # ── L-BFGS ───────────────────────────────────────────────────────────────
+    # L-BFGS
     if LBFGS_STEPS > 0:
         opt3    = torch.optim.LBFGS(params, lr=LBFGS_LR, max_iter=LBFGS_MAX_ITER,
                                      history_size=10, line_search_fn="strong_wolfe")
@@ -112,12 +102,12 @@ def main_lp() -> None:
         for _ in range(LBFGS_STEPS):
             opt3.step(closure)
 
-    # ── Final eval ───────────────────────────────────────────────────────────
+    # Final eval
     pde_f, bc_f = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
     pde_final = pde_f.item(); bc_final = bc_f.item()
     print(f"\nFinal  pde={pde_final:.7f}  bc={bc_final:.7f}  sum={pde_final+bc_final:.7f}")
 
-    # ── Save ─────────────────────────────────────────────────────────────────
+    # Save
     torch.save(gen.state_dict(), run_dir / "q_weights.pt")
     (run_dir / "config.json").write_text(json.dumps({
         "run_id": run_id, "generator": "learned_proj",

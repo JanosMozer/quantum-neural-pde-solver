@@ -19,7 +19,7 @@ from scripts.train import (
     ADAPT_EVERY, ADAPT_WARMUP, LAMBDA_MAX, LOG_EVERY,
     ADAM_LR, ADAM_STEPS, LBFGS_LR, LBFGS_STEPS, LBFGS_MAX_ITER,
     COSINE_ANNEAL, COSINE_ETA_MIN, WARMUP_STEPS,
-    _next_run_dir, make_colloc, make_bc, adaptive_lambda,
+    _next_run_dir, make_colloc, make_bc, adaptive_lambda, make_optimizer,
 )
 from qt_pinn.config_loader import load as _cfg_cl
 _t = _cfg_cl()["training"]
@@ -35,7 +35,7 @@ def main_classical() -> None:
 
     run_id, run_dir = _next_run_dir()
     run_dir.mkdir(parents=True)
-    print(f"Run (Classical): {run_id}  →  {run_dir}/")
+    print(f"Run (Classical): {run_id}  ->  {run_dir}/")
 
     model  = TargetPINN()
     gen    = QuantumWeightGenerator()
@@ -61,22 +61,13 @@ def main_classical() -> None:
         opt.step()
         return loss.item(), pde.item(), bc.item()
 
-    opt = torch.optim.Adam(params, lr=ADAM_LR, weight_decay=WEIGHT_DECAY)
-    if COSINE_ANNEAL:
-        warmup = torch.optim.lr_scheduler.LinearLR(
-            opt, start_factor=1e-3, end_factor=1.0, total_iters=max(WARMUP_STEPS, 1))
-        cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
-            opt, T_max=max(ADAM_STEPS - WARMUP_STEPS, 1), eta_min=COSINE_ETA_MIN)
-        sched = torch.optim.lr_scheduler.SequentialLR(
-            opt, schedulers=[warmup, cosine], milestones=[WARMUP_STEPS])
-    else:
-        sched = None
+    opt, sched = make_optimizer(params, ADAM_LR, WEIGHT_DECAY)
 
-    print(f"\nAdam  lr=0→{ADAM_LR}→{COSINE_ETA_MIN if COSINE_ANNEAL else ADAM_LR}  steps={ADAM_STEPS}")
-    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ':>8}  {'lr':>10}")
+    print(f"\nAdam  lr=0->{ADAM_LR}->{COSINE_ETA_MIN if COSINE_ANNEAL else ADAM_LR}  steps={ADAM_STEPS}")
+    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'lam':>8}  {'lr':>10}")
     for step in range(ADAM_STEPS):
         if RESAMPLE_EVERY > 0 and step % RESAMPLE_EVERY == 0 and step > 0:
-            x[:], y[:], t[:] = make_colloc(N_COLLOC)
+            x, y, t = make_colloc(N_COLLOC)
         total, pde, bc = _step(opt, step)
         if sched: sched.step()
         if step % LOG_EVERY == 0:

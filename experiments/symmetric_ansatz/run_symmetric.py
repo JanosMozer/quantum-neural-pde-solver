@@ -81,7 +81,7 @@ def main() -> None:
                   f"total={pde.item()+bc.item():.6f}  qgn={qgn_history[-1]:.6f}")
     elapsed = time.perf_counter() - t0
 
-    # ── held-out generalization, from the start, not bolted on ─────────────
+    # held-out generalization, from the start, not bolted on
     xh, yh, th = make_colloc(args.holdout_n, args.seed + 90000)
     xhb, yhb, thb, uhb, vhb = make_bc(args.holdout_n, args.seed + 90000)
     pde_h, bc_h = compute_burgers_loss(model, xh, yh, th, xhb, yhb, thb, uhb, vhb, gen())

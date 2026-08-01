@@ -10,7 +10,7 @@ from qt_pinn.pinn_target import TargetPINN
 from qt_pinn.qnn_generator import QuantumWeightGenerator
 from pdes.burgers2d.physics_loss import compute_burgers_loss
 
-# ── Load all parameters from config.yaml ────────────────────────────────────
+# Load all parameters from config.yaml
 _cfg            = _load_cfg()["training"]
 SEED            = _cfg["seed"]
 N_COLLOC        = _cfg["n_colloc"]
@@ -20,7 +20,7 @@ ADAPTIVE_LAMBDA = _cfg.get("adaptive_lambda", True)
 ALPHA           = _cfg.get("adaptive_lambda_alpha", 0.9)   # EMA momentum (paper: 0.9)
 ADAPT_EVERY     = _cfg.get("adaptive_lambda_every", 1)     # update every N steps (paper: every step)
 ADAPT_WARMUP    = _cfg.get("adaptive_lambda_warmup", 200)  # steps before annealing starts
-LAMBDA_MAX      = _cfg.get("lambda_max", 100.0)            # cap on λ to prevent runaway at init
+LAMBDA_MAX      = _cfg.get("lambda_max", 100.0)            # cap on lambda to prevent runaway at init
 LOG_EVERY       = _cfg["log_every"]
 ADAM_LR         = _cfg["adam"]["lr"]
 ADAM_STEPS      = _cfg["adam"]["steps"]
@@ -51,11 +51,11 @@ def make_colloc(n: int) -> tuple[torch.Tensor, ...]:
 def make_bc(n: int, structured: bool = False) -> tuple[torch.Tensor, ...]:
     """IC at t=0: u=sin(πx)cos(πy), v=-cos(πx)sin(πy).
 
-    structured=True: grid sampling — guarantees full (x,y) coverage.
-    structured=False: random uniform — fast but may cluster in 2D.
+    structured=True: grid sampling, guarantees full (x,y) coverage.
+    structured=False: random uniform, fast but may cluster in 2D.
     """
     if structured:
-        side = max(1, int(n ** 0.5))          # e.g. n=256 → 16×16 grid
+        side = max(1, int(n ** 0.5))          # e.g. n=256 -> 16x16 grid
         xs = torch.linspace(-1, 1, side)
         ys = torch.linspace(-1, 1, side)
         xg, yg = torch.meshgrid(xs, ys, indexing="ij")
@@ -74,8 +74,8 @@ def adaptive_lambda(pde: torch.Tensor, bc: torch.Tensor,
                     params: list, current: float, alpha: float = 0.9) -> float:
     """Wang et al. 2020 (arXiv:2001.04536), Algorithm 1.
 
-    λ̂ = max_θ|∇_θ L_pde| / mean_θ|∇_θ L_bc|
-    λ  = (1-α)·λ + α·λ̂          (EMA, paper recommends α=0.9)
+    lambda_hat = max|grad_pde| / mean|grad_bc|
+    lambda = (1-alpha)*lambda + alpha*lambda_hat  (EMA, paper recommends alpha=0.9)
     """
     g_pde = torch.autograd.grad(pde, params, retain_graph=True, allow_unused=True)
     g_bc  = torch.autograd.grad(bc,  params, retain_graph=True, allow_unused=True)
@@ -93,13 +93,32 @@ def forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc):
     return pde, bc
 
 
+def make_optimizer(params, lr: float, weight_decay: float = 0.0):
+    """Adam with optional linear warmup + cosine annealing, config-driven.
+
+    Shared by train.py/train_lp.py/train_classical.py/train_gpu.py, which
+    all used to duplicate this block identically.
+    """
+    opt = torch.optim.Adam(params, lr=lr, weight_decay=weight_decay)
+    if COSINE_ANNEAL:
+        warmup = torch.optim.lr_scheduler.LinearLR(
+            opt, start_factor=1e-3, end_factor=1.0, total_iters=max(WARMUP_STEPS, 1))
+        cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt, T_max=max(ADAM_STEPS - WARMUP_STEPS, 1), eta_min=COSINE_ETA_MIN)
+        sched = torch.optim.lr_scheduler.SequentialLR(
+            opt, schedulers=[warmup, cosine], milestones=[WARMUP_STEPS])
+    else:
+        sched = None
+    return opt, sched
+
+
 def main() -> None:
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
     run_id, run_dir = _next_run_dir()
     run_dir.mkdir(parents=True)
-    print(f"Run: {run_id}  →  {run_dir}/")
+    print(f"Run: {run_id}  ->  {run_dir}/")
 
     model  = TargetPINN()
     gen    = QuantumWeightGenerator(seed=_load_cfg()["quantum"].get("partition_seed", 0))
@@ -122,20 +141,10 @@ def main() -> None:
         opt.step()
         return loss.item(), pde.item(), bc.item()
 
-    # ── Adam with optional warmup + cosine annealing ───────────────────────
-    opt = torch.optim.Adam(params, lr=ADAM_LR)
-    if COSINE_ANNEAL:
-        warmup = torch.optim.lr_scheduler.LinearLR(
-            opt, start_factor=1e-3, end_factor=1.0, total_iters=max(WARMUP_STEPS, 1))
-        cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
-            opt, T_max=max(ADAM_STEPS - WARMUP_STEPS, 1), eta_min=COSINE_ETA_MIN)
-        sched = torch.optim.lr_scheduler.SequentialLR(
-            opt, schedulers=[warmup, cosine], milestones=[WARMUP_STEPS])
-    else:
-        sched = None
+    opt, sched = make_optimizer(params, ADAM_LR)
     lr_end = COSINE_ETA_MIN if COSINE_ANNEAL else ADAM_LR
-    print(f"\nAdam  lr=0→{ADAM_LR}→{lr_end}  warmup={WARMUP_STEPS}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
-    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}  {'lr':>10}")
+    print(f"\nAdam  lr=0->{ADAM_LR}->{lr_end}  warmup={WARMUP_STEPS}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
+    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'lam':>8}  {'lr':>10}")
     for step in range(ADAM_STEPS):
         total, pde, bc = _step(opt, step)
         if sched: sched.step()
@@ -143,12 +152,12 @@ def main() -> None:
             lr_now = opt.param_groups[0]["lr"]
             print(f"{step:6d}  {total:12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.4f}  {lr_now:.2e}")
 
-    # ── Stage 3: L-BFGS ────────────────────────────────────────────────────
+    # Stage 3: L-BFGS
     opt3    = torch.optim.LBFGS(params, lr=LBFGS_LR, max_iter=LBFGS_MAX_ITER,
                                  history_size=10, line_search_fn="strong_wolfe")
     counter = [0]
     print(f"\nL-BFGS  lr={LBFGS_LR}  steps={LBFGS_STEPS}")
-    print(f"{'closure':>7}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ_bc':>8}")
+    print(f"{'closure':>7}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'lam':>8}")
 
     def closure() -> torch.Tensor:
         nonlocal lam
@@ -166,12 +175,12 @@ def main() -> None:
     for _ in range(LBFGS_STEPS):
         opt3.step(closure)
 
-    # ── Final eval ───────────────────────────────────────────────────────────
+    # Final eval
     pde_f, bc_f = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
     pde_final = pde_f.item(); bc_final = bc_f.item()
     print(f"\nFinal  pde={pde_final:.7f}  bc={bc_final:.7f}  sum={pde_final+bc_final:.7f}")
 
-    # ── Save ────────────────────────────────────────────────────────────────
+    # Save
     torch.save(gen.state_dict(), run_dir / "q_weights.pt")
     (run_dir / "config.json").write_text(json.dumps({
         "run_id": run_id, "seed": SEED, "n_colloc": N_COLLOC, "n_bc": N_BC,

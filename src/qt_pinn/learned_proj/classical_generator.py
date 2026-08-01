@@ -2,7 +2,7 @@
 
 Replaces the quantum circuit with a trainable 512-dim latent vector
 (softmax-normalised to match the probability output of the circuit).
-Architecture is otherwise IDENTICAL — same bottleneck projection.
+Architecture is otherwise IDENTICAL, same bottleneck projection.
 
 Fair ablation: if this trains equally well, the quantum circuit is redundant.
 """
@@ -17,7 +17,7 @@ from qt_pinn.qnn_generator import N_STATES, W1_SIZE, W2_SIZE, W3_SIZE, TOTAL_WEI
 
 
 class ClassicalWeightGenerator(nn.Module):
-    """Trainable latent vector → same bottleneck projection as LP generator.
+    """Trainable latent vector -> same bottleneck projection as LP generator.
 
     Params: 512 (latent) + ~33K (proj) ≈ 33.5K total
     vs quantum LP:    81 (circuit) + ~33K (proj) ≈ 33K total

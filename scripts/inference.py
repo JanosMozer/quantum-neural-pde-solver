@@ -31,7 +31,7 @@ class _FourierMap(nn.Module):
 
 
 class PureClassicalPINN(nn.Module):
-    """Standalone MLP for Burgers inference — zero quantum dependencies."""
+    """Standalone MLP for Burgers inference, zero quantum dependencies."""
 
     def __init__(self, weights_path: Path) -> None:
         super().__init__()
@@ -72,7 +72,7 @@ def benchmark(model: nn.Module, batch: int = 1000, reps: int = 200) -> float:
 
 
 def evaluate_ic(model: nn.Module, n: int = 20) -> dict:
-    """Measure accuracy at t=0 on n×n grid where exact solution is known.
+    """Measure accuracy at t=0 on nxn grid where exact solution is known.
 
     IC:  u(x,y,0) = sin(πx)·cos(πy)
          v(x,y,0) = −cos(πx)·sin(πy)
@@ -112,19 +112,19 @@ def print_ic_report(model: nn.Module) -> None:
     """Full IC accuracy report with sample point table."""
     res = evaluate_ic(model, n=20)
 
-    print("\n━━━  IC Accuracy  (t=0, 20×20 grid, 400 points)  ━━━")
+    print("\n---  IC Accuracy  (t=0, 20x20 grid, 400 points)  ---")
     print(f"  {'':6}  {'L2 rel%':>9}  {'RMSE':>9}  {'MAE':>9}  {'Max err':>9}")
     print(f"  {'u':6}  {res['u']['l2_rel']*100:9.2f}  {res['u']['rmse']:9.5f}  {res['u']['mae']:9.5f}  {res['u']['max_err']:9.5f}")
     print(f"  {'v':6}  {res['v']['l2_rel']*100:9.2f}  {res['v']['rmse']:9.5f}  {res['v']['mae']:9.5f}  {res['v']['max_err']:9.5f}")
 
-    # ── sample point table ────────────────────────────────────────────────────
+    # sample point table
     test = [
         (-1.0, -1.0), (-0.5, -0.5), (0.0, 0.0), (0.5, 0.5), (1.0, 1.0),  # diagonal
         (-0.5,  0.0), (0.5,  0.0),                                           # y=0 axis
         ( 0.0, -0.5), (0.0,  0.5),                                           # x=0 axis
     ]
-    print(f"\n{'x':>6}  {'y':>6} │ {'u_pred':>8} {'u_exact':>8} {'|err|':>8} │ {'v_pred':>8} {'v_exact':>8} {'|err|':>8}")
-    print("─" * 74)
+    print(f"\n{'x':>6}  {'y':>6} | {'u_pred':>8} {'u_exact':>8} {'|err|':>8} | {'v_pred':>8} {'v_exact':>8} {'|err|':>8}")
+    print("-" * 74)
     for xi, yi in test:
         xT = torch.tensor([xi]); yT = torch.tensor([yi]); tT = torch.zeros(1)
         u_ex = math.sin(math.pi * xi) * math.cos(math.pi * yi)
@@ -132,9 +132,9 @@ def print_ic_report(model: nn.Module) -> None:
         with torch.no_grad():
             p = model(xT, yT, tT)
         up, vp = p[0, 0].item(), p[0, 1].item()
-        print(f"{xi:6.2f}  {yi:6.2f} │ {up:8.4f} {u_ex:8.4f} {abs(up-u_ex):8.4f} │ {vp:8.4f} {v_ex:8.4f} {abs(vp-v_ex):8.4f}")
+        print(f"{xi:6.2f}  {yi:6.2f} | {up:8.4f} {u_ex:8.4f} {abs(up-u_ex):8.4f} | {vp:8.4f} {v_ex:8.4f} {abs(vp-v_ex):8.4f}")
 
-    # ── time evolution at one probe point ─────────────────────────────────────
+    # time evolution at one probe point
     # probe at two physically interesting points
     probes = [
         (0.5,  0.0, "sin(π·0.5)·cos(0)=1.0",  "−cos(π·0.5)·sin(0)=0.0"),
@@ -143,14 +143,14 @@ def print_ic_report(model: nn.Module) -> None:
     for px, py, u_desc, v_desc in probes:
         u_ic = math.sin(math.pi * px) * math.cos(math.pi * py)
         v_ic = -math.cos(math.pi * px) * math.sin(math.pi * py)
-        print(f"\n  Probe  x={px}, y={py}  │  IC: u={u_ic:.4f} ({u_desc})  v={v_ic:.4f} ({v_desc})")
+        print(f"\n  Probe  x={px}, y={py}  |  IC: u={u_ic:.4f} ({u_desc})  v={v_ic:.4f} ({v_desc})")
         print(f"  {'t':>5}  {'u_pred':>9}  {'u_err':>8}  {'v_pred':>9}  {'v_err':>8}")
         for tv in [0.0, 0.1, 0.25, 0.5, 1.0]:
             with torch.no_grad():
                 p = model(torch.tensor([px]), torch.tensor([py]), torch.tensor([tv]))
             up, vp = p[0,0].item(), p[0,1].item()
-            u_e = f"{abs(up-u_ic):.4f}" if tv == 0.0 else "      —"
-            v_e = f"{abs(vp-v_ic):.4f}" if tv == 0.0 else "      —"
+            u_e = f"{abs(up-u_ic):.4f}" if tv == 0.0 else "      -"
+            v_e = f"{abs(vp-v_ic):.4f}" if tv == 0.0 else "      -"
             print(f"  {tv:5.2f}  {up:9.4f}  {u_e:>8}  {vp:9.4f}  {v_e:>8}")
 
 
@@ -183,7 +183,7 @@ def plot_solution(
         ax.legend(fontsize=8); ax.grid(True, alpha=0.25)
         ax.axhline(0, color="k", lw=0.5, alpha=0.4)
 
-    fig.suptitle(f"[{run_id}]  Burgers — time evolution at y={y_slice}", fontsize=11)
+    fig.suptitle(f"[{run_id}]  Burgers, time evolution at y={y_slice}", fontsize=11)
     plt.tight_layout()
     plt.savefig(f"checkpoints/{run_id}/solution_plot.png", dpi=150)
     plt.show()

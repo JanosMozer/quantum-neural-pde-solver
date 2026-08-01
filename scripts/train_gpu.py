@@ -4,7 +4,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import json, torch, numpy as np
 from qt_pinn.learned_proj.qnn_generator import QuantumWeightGeneratorLP
-from qt_pinn.qnn_generator import _circuit, N_QUBITS, W1_SIZE, W2_SIZE, W3_SIZE
+from qt_pinn.qnn_generator import _circuit, W1_SIZE, W2_SIZE, W3_SIZE
 from qt_pinn.config_loader import load as _load_cfg
 from qt_pinn.pinn_target import TargetPINN
 from pdes.burgers2d.physics_loss import compute_burgers_loss
@@ -14,7 +14,7 @@ from scripts.train import (
     ADAPT_EVERY, ADAPT_WARMUP, LOG_EVERY,
     ADAM_LR, ADAM_STEPS, LBFGS_LR, LBFGS_STEPS, LBFGS_MAX_ITER,
     COSINE_ANNEAL, COSINE_ETA_MIN, WARMUP_STEPS,
-    _next_run_dir, forward_losses, adaptive_lambda,
+    _next_run_dir, forward_losses, adaptive_lambda, make_optimizer,
 )
 
 _t = _load_cfg()["training"]
@@ -40,10 +40,8 @@ class GPUWeightGeneratorLP(QuantumWeightGeneratorLP):
         self.proj.to(device)
         self._device = device
 
-    def forward(self, inputs: torch.Tensor | None = None) -> dict[str, torch.Tensor]:
-        if inputs is None:
-            inputs = torch.zeros(N_QUBITS)
-        probs = _circuit(inputs, self.q_weights).float().to(self._device)
+    def forward(self) -> dict[str, torch.Tensor]:
+        probs = _circuit(self.q_weights).float().to(self._device)
         flat = self.proj(probs)
         return {
             "W1": flat[:W1_SIZE],
@@ -82,7 +80,7 @@ def main_gpu() -> None:
 
     run_id, run_dir = _next_run_dir()
     run_dir.mkdir(parents=True)
-    print(f"Run (GPU/LP): {run_id}  →  {run_dir}/  device={DEVICE}")
+    print(f"Run (GPU/LP): {run_id}  ->  {run_dir}/  device={DEVICE}")
 
     model  = TargetPINN().to(DEVICE)
     gen    = GPUWeightGeneratorLP(DEVICE)
@@ -111,19 +109,10 @@ def main_gpu() -> None:
         opt.step()
         return loss.item(), pde.item(), bc.item()
 
-    opt = torch.optim.Adam(params, lr=ADAM_LR, weight_decay=WEIGHT_DECAY)
-    if COSINE_ANNEAL:
-        warmup = torch.optim.lr_scheduler.LinearLR(
-            opt, start_factor=1e-3, end_factor=1.0, total_iters=max(WARMUP_STEPS, 1))
-        cosine = torch.optim.lr_scheduler.CosineAnnealingLR(
-            opt, T_max=max(ADAM_STEPS - WARMUP_STEPS, 1), eta_min=COSINE_ETA_MIN)
-        sched = torch.optim.lr_scheduler.SequentialLR(
-            opt, schedulers=[warmup, cosine], milestones=[WARMUP_STEPS])
-    else:
-        sched = None
+    opt, sched = make_optimizer(params, ADAM_LR, WEIGHT_DECAY)
     lr_end = COSINE_ETA_MIN if COSINE_ANNEAL else ADAM_LR
-    print(f"\nAdam  lr=0→{ADAM_LR}→{lr_end}  warmup={WARMUP_STEPS}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
-    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ':>8}  {'lr':>10}")
+    print(f"\nAdam  lr=0->{ADAM_LR}->{lr_end}  warmup={WARMUP_STEPS}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
+    print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'lam':>8}  {'lr':>10}")
     for step in range(ADAM_STEPS):
         if RESAMPLE_EVERY > 0 and step % RESAMPLE_EVERY == 0 and step > 0:
             x, y, t = make_colloc(N_COLLOC, DEVICE)
@@ -134,11 +123,11 @@ def main_gpu() -> None:
             lr_now = opt.param_groups[0]["lr"]
             print(f"{step:6d}  {total:12.7f}  {pde:12.7f}  {bc:12.7f}  {lam:8.4f}  {lr_now:.2e}")
 
-    # ── L-BFGS ───────────────────────────────────────────────────────────────
+    # L-BFGS
     # NOTE: torch.optim.LBFGS flattens all params' grads into one tensor for its
     # line search, which errors on mixed CPU/GPU params (q_weights is CPU).
     # Fine while lbfgs.steps=0 (current config); if you turn it on, this needs
-    # a real fix (not just device placement) — flag it, don't silently hack it.
+    # a real fix (not just device placement), flag it, don't silently hack it.
     if LBFGS_STEPS > 0:
         opt3    = torch.optim.LBFGS(params, lr=LBFGS_LR, max_iter=LBFGS_MAX_ITER,
                                      history_size=10, line_search_fn="strong_wolfe")
@@ -160,12 +149,12 @@ def main_gpu() -> None:
         for _ in range(LBFGS_STEPS):
             opt3.step(closure)
 
-    # ── Final eval ───────────────────────────────────────────────────────────
+    # Final eval
     pde_f, bc_f = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
     pde_final = pde_f.item(); bc_final = bc_f.item()
     print(f"\nFinal  pde={pde_final:.7f}  bc={bc_final:.7f}  sum={pde_final+bc_final:.7f}")
 
-    # ── Holdout eval: fresh points, seed offset +90000 (never seen in training) ─
+    # Holdout eval: fresh points, seed offset +90000 (never seen in training)
     torch.manual_seed(SEED + 90000)
     xh, yh, th = make_colloc(N_COLLOC, DEVICE)
     xh_bc, yh_bc, th_bc, uh_bc, vh_bc = make_bc(N_BC, DEVICE, structured=STRUCTURED_BC)
@@ -174,7 +163,7 @@ def main_gpu() -> None:
     print(f"Holdout pde={pde_hold:.7f}  bc={bc_hold:.7f}  sum={pde_hold+bc_hold:.7f}  "
           f"(pde ratio={pde_hold/max(pde_final,1e-12):.2f}x)")
 
-    # ── Save ─────────────────────────────────────────────────────────────────
+    # Save
     torch.save(gen.state_dict(), run_dir / "q_weights.pt")
     (run_dir / "config.json").write_text(json.dumps({
         "run_id": run_id, "generator": "learned_proj_gpu", "device": str(DEVICE),
