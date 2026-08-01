@@ -63,7 +63,7 @@ def build_generators(device: torch.device, bottleneck_width: int = 64) -> tuple[
 
 
 def run_one(name: str, gen: torch.nn.Module, model: torch.nn.Module, steps: int,
-            train_data: tuple, holdout_data: tuple) -> dict:
+            train_data: tuple, holdout_data: tuple, weight_reg_warmup: int = 0) -> dict:
     x, y, t, xb, yb, tb, ub, vb = train_data
     xh, yh, th, xhb, yhb, thb, uhb, vhb = holdout_data
     params = list(gen.parameters())
@@ -79,7 +79,14 @@ def run_one(name: str, gen: torch.nn.Module, model: torch.nn.Module, steps: int,
         w = gen()
         pde, bc = compute_burgers_loss(model, x, y, t, xb, yb, tb, ub, vb, w)
         reg = sum(v.pow(2).mean() for v in w.values())
-        loss = pde + LAMBDA_BC * bc + WEIGHT_REG * reg
+        # u=v=0 is an exact trivial solution of the PDE residual (not an approximation),
+        # and weight_reg pulls weights toward exactly that. If BC's gradient signal is
+        # too weak to escape it early on, training collapses there and gets stuck: found
+        # 2026-08-01, 79% of a bottleneck-width sweep landed here (pde_loss exactly 0.0,
+        # bc_loss pinned at the fixed E[u_bc^2+v_bc^2]~=0.5, regardless of generator or
+        # width). Delaying weight_reg gives BC a clear run at pulling weights off zero first.
+        wr = WEIGHT_REG if step >= weight_reg_warmup else 0.0
+        loss = pde + LAMBDA_BC * bc + wr * reg
         loss.backward()
         # MPS's forward is a product of its site tensors: a single global-norm
         # clip lets one tensor drift while starving the rest, compounding into
@@ -95,10 +102,17 @@ def run_one(name: str, gen: torch.nn.Module, model: torch.nn.Module, steps: int,
             print(f"{step:6d}  pde={pde.item():.6f}  bc={bc.item():.6f}  total={pde.item() + bc.item():.6f}")
     elapsed = time.perf_counter() - t0
 
+    # exact trivial-solution collapse (see comment above): pde_loss genuinely hits 0,
+    # not just small, so this threshold does not false-positive on ordinary good fits
+    collapsed = pde.item() < 1e-8
+    if collapsed:
+        print(f"WARNING: {name} collapsed to the trivial u=v=0 solution (pde_loss={pde.item():.2e})")
+
     result = {
         "generator": name, "n_params": n_params, "elapsed_s": round(elapsed, 1),
         "pde_loss": round(pde.item(), 8), "bc_loss": round(bc.item(), 8),
-        "total": round(pde.item() + bc.item(), 8),
+        "total": round(pde.item() + bc.item(), 8), "collapsed": collapsed,
+        "weight_reg_warmup": weight_reg_warmup,
     }
 
     # holdout still needs autograd for the PDE residual, so no torch.no_grad() here
@@ -125,6 +139,10 @@ def main() -> None:
                          help="proj bottleneck width, applies to both 'quantum' and 'classical_frontend'")
     parser.add_argument("--seed", type=int, default=None,
                          help="override training.seed from config, for multi-seed runs")
+    parser.add_argument("--weight_reg_warmup", type=int, default=0,
+                         help="steps before weight_reg activates; delays the L2-toward-zero "
+                              "pull so BC gradients get a chance to move weights off the "
+                              "trivial u=v=0 solution first (see run_one's comment)")
     args = parser.parse_args()
 
     seed = args.seed if args.seed is not None else SEED
@@ -142,14 +160,16 @@ def main() -> None:
     print(f"Matched generator parameter budget: {n_target:,} (quantum's actual total, "
           f"bottleneck_width={args.bottleneck_width})")
     print(f"lambda_bc={LAMBDA_BC}  n_colloc={N_COLLOC}  n_bc={N_BC}  steps={args.steps}  "
-          f"grad_clip={GRAD_CLIP}  device={DEVICE}")
+          f"grad_clip={GRAD_CLIP}  weight_reg_warmup={args.weight_reg_warmup}  device={DEVICE}")
 
     out_dir = Path("checkpoints/ablation")
     out_dir.mkdir(parents=True, exist_ok=True)
-    suffix = f"_bw{args.bottleneck_width}_seed{seed}"
+    wr_suffix = f"_wrw{args.weight_reg_warmup}" if args.weight_reg_warmup else ""
+    suffix = f"_bw{args.bottleneck_width}_seed{seed}{wr_suffix}"
     results = []
     for name in args.generators:
-        result = run_one(name, gens[name], model, args.steps, train_data, holdout_data)
+        result = run_one(name, gens[name], model, args.steps, train_data, holdout_data,
+                          weight_reg_warmup=args.weight_reg_warmup)
         result["seed"] = seed
         result["bottleneck_width"] = args.bottleneck_width
         results.append(result)
