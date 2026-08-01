@@ -1,0 +1,30 @@
+[
+  {
+    "generator": "quantum",
+    "n_params": 55765,
+    "elapsed_s": 802.0,
+    "pde_loss": 0.0,
+    "bc_loss": 0.49734262,
+    "total": 0.49734262,
+    "holdout_pde_loss": 0.0,
+    "holdout_bc_loss": 0.49004444,
+    "holdout_total": 0.49004444,
+    "pde_ratio": 0.0,
+    "seed": 0,
+    "bottleneck_width": 16
+  },
+  {
+    "generator": "classical_frontend",
+    "n_params": 55765,
+    "elapsed_s": 296.7,
+    "pde_loss": 0.03431291,
+    "bc_loss": 0.05636933,
+    "total": 0.09068224,
+    "holdout_pde_loss": 0.03756663,
+    "holdout_bc_loss": 0.0550781,
+    "holdout_total": 0.09264474,
+    "pde_ratio": 1.0948,
+    "seed": 0,
+    "bottleneck_width": 16
+  }
+]

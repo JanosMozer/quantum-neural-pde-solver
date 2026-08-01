@@ -1,0 +1,14 @@
+[
+  {
+    "generator": "quantum",
+    "n_params": 110085,
+    "elapsed_s": 529.2,
+    "pde_loss": 0.0,
+    "bc_loss": 0.49734259,
+    "total": 0.49734259,
+    "holdout_pde_loss": 0.0,
+    "holdout_bc_loss": 0.49004444,
+    "holdout_total": 0.49004444,
+    "pde_ratio": 0.0
+  }
+]
