@@ -61,6 +61,16 @@ class MPSGenerator(nn.Module):
     def param_count(self) -> int:
         return sum(p.numel() for p in self.parameters())
 
+    def clip_grad_norm_(self, max_norm: float = 1.0) -> None:
+        """Clip each site tensor's gradient separately, not the combined norm
+        over all sites. The contraction is a product of num_sites tensors, so a
+        single global clip lets one site drift while starving the others; at
+        large bond_dim (e.g. 110 for 11 sites, target_param_count~2e5) that
+        drift compounds multiplicatively across the chain and blows up to Inf/NaN.
+        """
+        for p in self.tensors:
+            torch.nn.utils.clip_grad_norm_(p, max_norm)
+
     def forward(self) -> torch.Tensor:
         dense = _mps_to_dense(list(self.tensors))
         return dense[: self.out_dim]

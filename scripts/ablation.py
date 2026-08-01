@@ -76,7 +76,14 @@ def run_one(name: str, gen: torch.nn.Module, model: torch.nn.Module, steps: int,
         reg = sum(v.pow(2).mean() for v in w.values())
         loss = pde + LAMBDA_BC * bc + WEIGHT_REG * reg
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(params, GRAD_CLIP)
+        # MPS's forward is a product of its site tensors: a single global-norm
+        # clip lets one tensor drift while starving the rest, compounding into
+        # Inf/NaN at large bond_dim. Clip per-tensor for it, globally for others.
+        clip = getattr(gen, "flat_gen", gen)
+        if hasattr(clip, "clip_grad_norm_"):
+            clip.clip_grad_norm_(GRAD_CLIP)
+        else:
+            torch.nn.utils.clip_grad_norm_(params, GRAD_CLIP)
         opt.step()
         sched.step()
         if step % 2000 == 0:
