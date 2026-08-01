@@ -28,6 +28,7 @@ def compute_burgers_loss(
     u_bc: torch.Tensor,
     v_bc: torch.Tensor,
     weights: dict[str, torch.Tensor],
+    return_residuals: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Compute PDE residual + BC loss.
 
@@ -37,9 +38,15 @@ def compute_burgers_loss(
         x_bc, y_bc, t_bc: boundary/IC points (M,)
         u_bc, v_bc: boundary values (M,)
         weights: weight dict from QuantumWeightGenerator
+        return_residuals: if True, also return the per-point residual (N,) tensor
+            (f_u**2 + f_v**2, detached) as a third element -- needed for RAR
+            (Lu, Meng, Mao, Karniadakis, DeepXDE, arXiv:1907.04502), which selects
+            new collocation points by largest residual. Additive: existing 2-tuple
+            callers are unaffected by the default.
 
     Returns:
-        (pde_loss, bc_loss): scalar tensors
+        (pde_loss, bc_loss), or (pde_loss, bc_loss, per_point_residual) if
+        return_residuals=True
     """
     # PDE residuals at collocation points
     uvp = model(x, y, t, weights)  # (N, 2)
@@ -70,6 +77,8 @@ def compute_burgers_loss(
     uv_bc = model(x_bc, y_bc, t_bc, weights)  # (M, 2)
     bc_loss = torch.mean((uv_bc[:, 0] - u_bc) ** 2) + torch.mean((uv_bc[:, 1] - v_bc) ** 2)
 
+    if return_residuals:
+        return pde_loss, bc_loss, (f_u ** 2 + f_v ** 2).detach()
     return pde_loss, bc_loss
 
 

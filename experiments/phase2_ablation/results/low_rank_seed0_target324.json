@@ -1,0 +1,18 @@
+{
+  "generator": "low_rank",
+  "n_params": 324,
+  "lambda_bc": 1.0,
+  "n_colloc": 32,
+  "n_bc": 32,
+  "steps": 10,
+  "seed": 0,
+  "siren": true,
+  "pde_loss": 16137.859375,
+  "bc_loss": 0.62727457,
+  "total": 16138.48664957,
+  "elapsed_s": 0.1,
+  "holdout_n": 32,
+  "holdout_pde_loss": 32898.3828125,
+  "holdout_bc_loss": 0.86605144,
+  "holdout_total": 32899.24886394
+}

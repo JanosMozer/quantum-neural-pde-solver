@@ -49,7 +49,7 @@ def _pick_num_sites_and_bond_dim(out_dim: int, target_param_count: int) -> tuple
 
 
 class MPSGenerator(nn.Module):
-    def __init__(self, out_dim: int, target_param_count: int) -> None:
+    def __init__(self, out_dim: int, target_param_count: int, seed: int = 0) -> None:
         super().__init__()
         self.out_dim = out_dim
         num_sites, bond_dim = _pick_num_sites_and_bond_dim(out_dim, target_param_count)
@@ -61,7 +61,9 @@ class MPSGenerator(nn.Module):
         # multiplicatively across the contraction (0.1**num_sites), collapsing both the output
         # and its gradient to numerical zero for any num_sites much above a handful. Use
         # quimb's own init unscaled.
-        seed_mps = qtn.MPS_rand_state(L=num_sites, bond_dim=bond_dim, dtype="float64")
+        # seed=... is required: MPS_rand_state draws from its own RNG, not covered by
+        # torch.manual_seed, confirmed by two unseeded calls returning different tensors.
+        seed_mps = qtn.MPS_rand_state(L=num_sites, bond_dim=bond_dim, dtype="float64", seed=seed)
         self.tensors = nn.ParameterList([
             nn.Parameter(torch.tensor(t.data.copy(), dtype=torch.float64))
             for t in seed_mps.tensors
@@ -92,6 +94,10 @@ if __name__ == "__main__":
         # in practice. 1e-4 is well above float32 training noise, well below a healthy signal.
         assert all(g.norm().item() > 1e-4 for g in grads), "gradient too small to be useful, not just nonzero"
         assert out.std().item() > 1e-4, "output magnitude too small to be useful"
+        # reproducibility: found 2026-08-01 that MPS_rand_state ignored torch.manual_seed
+        # entirely (own RNG source); same seed must now give bit-identical init.
+        gen2 = MPSGenerator(out_dim=out_dim, target_param_count=target, seed=0)
+        assert torch.allclose(gen().detach(), gen2().detach()), "same seed must reproduce exactly"
         print(f"PASS target={target} out_dim={out_dim}: num_sites={gen.num_sites} "
               f"bond_dim={gen.bond_dim} actual_params={actual} (rel err {rel_err:.2%}), "
               f"shape ok, gradients ok")

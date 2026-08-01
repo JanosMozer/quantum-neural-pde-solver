@@ -55,10 +55,20 @@ def main() -> None:
     parser.add_argument("--n_colloc", type=int, default=1024)
     parser.add_argument("--n_bc", type=int, default=1024)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--holdout", action="store_true",
+                         help="task 2 gap: original sweep never checked this, closing it now")
+    parser.add_argument("--holdout_n", type=int, default=4096)
+    parser.add_argument("--siren", action="store_true",
+                         help="TargetPINN(activation='siren'); no matching weight-init change "
+                              "for the quantum generator itself, see plan's explicit scoping")
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
-    model = TargetPINN()
+    # CPU only, deliberately: benchmarked directly, the quantum circuit is faster on CPU
+    # (13.4ms/step vs 28.3ms/step CUDA, statevector too small to amortize GPU launch
+    # overhead), and mixing devices (circuit on CPU, classical MLP on GPU) would add a
+    # per-step transfer/sync cost with no verified net win at this M -- checked, not assumed.
+    model = TargetPINN(activation="siren" if args.siren else "tanh")
     gen = QuantumWeightGenerator(seed=0)
     params = list(gen.parameters())
     n_circuit_params = gen.q_weights.numel()
@@ -92,7 +102,7 @@ def main() -> None:
     qgn_arr = np.array(qgn_history)
     result = {
         "n_layers": N_LAYERS, "n_qubits": N_QUBITS, "n_circuit_params": n_circuit_params,
-        "n_params": n_params, "lambda_bc": args.lambda_bc,
+        "n_params": n_params, "lambda_bc": args.lambda_bc, "siren": args.siren,
         "n_colloc": args.n_colloc, "n_bc": args.n_bc, "steps": args.steps, "seed": args.seed,
         "pde_loss": round(pde.item(), 8), "bc_loss": round(bc.item(), 8),
         "total": round(pde.item() + bc.item(), 8), "elapsed_s": round(elapsed, 1),
@@ -106,9 +116,21 @@ def main() -> None:
           f"sum={result['total']:.7f}  qgn_mean={result['qgn_mean']:.4f}  "
           f"qgn_std={result['qgn_std']:.4f}  ({elapsed:.1f}s)")
 
+    if args.holdout:
+        xh, yh, th = make_colloc(args.holdout_n, args.seed + 90000)
+        xhb, yhb, thb, uhb, vhb = make_bc(args.holdout_n, args.seed + 90000)
+        pde_h, bc_h = compute_burgers_loss(model, xh, yh, th, xhb, yhb, thb, uhb, vhb, gen())
+        result["holdout_n"] = args.holdout_n
+        result["holdout_pde_loss"] = round(pde_h.item(), 8)
+        result["holdout_bc_loss"] = round(bc_h.item(), 8)
+        result["holdout_total"] = round(pde_h.item() + bc_h.item(), 8)
+        print(f"Holdout  pde={result['holdout_pde_loss']:.7f}  bc={result['holdout_bc_loss']:.7f}  "
+              f"sum={result['holdout_total']:.7f}")
+
     out_dir = Path(__file__).resolve().parent / "results"
     out_dir.mkdir(exist_ok=True)
-    out_path = out_dir / f"L{N_LAYERS}_seed{args.seed}.json"
+    suffix = "_siren" if args.siren else ""
+    out_path = out_dir / f"L{N_LAYERS}_seed{args.seed}{suffix}.json"
     out_path.write_text(json.dumps(result, indent=2))
     print(f"Saved {out_path}")
 

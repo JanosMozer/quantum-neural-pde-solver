@@ -1,0 +1,17 @@
+{
+  "generator": "mps",
+  "n_params": 64,
+  "lambda_bc": 1.0,
+  "n_colloc": 1024,
+  "n_bc": 1024,
+  "steps": 18000,
+  "seed": 0,
+  "pde_loss": 0.00386388,
+  "bc_loss": 0.49640977,
+  "total": 0.50027365,
+  "elapsed_s": 87.1,
+  "holdout_n": 4096,
+  "holdout_pde_loss": 0.00419322,
+  "holdout_bc_loss": 0.49601784,
+  "holdout_total": 0.50021106
+}

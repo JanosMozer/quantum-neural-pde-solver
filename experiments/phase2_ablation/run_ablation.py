@@ -16,13 +16,48 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 import torch
-from qt_pinn.pinn_target import TargetPINN
+from qt_pinn.pinn_target import TargetPINN, IN_DIM, H1, H2, OUT_DIM
 from qt_pinn.qnn_generator import QuantumWeightGenerator, W1_SIZE, W2_SIZE, W3_SIZE, TOTAL_WEIGHTS
 from qt_pinn.physics_loss import compute_burgers_loss
 from qt_pinn.baselines.low_rank import LowRankGenerator
 from qt_pinn.baselines.mps import MPSGenerator
 
 OPTION1_PARAMS = 82  # circuit (81) + gamma (1), the real matched target for the baselines
+
+
+class DirectGenerator(torch.nn.Module):
+    """Task 1, the missing ceiling: no compression at all. Plain nn.Linear layers,
+    PyTorch's default init, trained directly. Not matched to any budget on purpose,
+    418 free parameters is the point: what can this exact MLP/loss/data reach with
+    no generator in the way.
+
+    siren_init=True applies Sitzmann et al. 2020's exact initialization (verbatim
+    from the official repo, vsitzmann/siren modules.py) instead of PyTorch's
+    default. Only meaningful when TargetPINN(activation="siren") is used downstream
+    -- this init is derived specifically to keep sin(30*Wx+b) statistics stable
+    through depth, it has no special meaning for a tanh network.
+    """
+
+    def __init__(self, siren_init: bool = False) -> None:
+        super().__init__()
+        self.l1 = torch.nn.Linear(IN_DIM, H1)
+        self.l2 = torch.nn.Linear(H1, H2)
+        self.l3 = torch.nn.Linear(H2, OUT_DIM)
+        if siren_init:
+            with torch.no_grad():
+                n_in = self.l1.weight.size(-1)
+                self.l1.weight.uniform_(-1 / n_in, 1 / n_in)
+                for layer in (self.l2, self.l3):
+                    n_in = layer.weight.size(-1)
+                    bound = (6 / n_in) ** 0.5 / 30
+                    layer.weight.uniform_(-bound, bound)
+
+    def forward(self, inputs=None):
+        return {
+            "W1": torch.cat([self.l1.weight.flatten(), self.l1.bias]),
+            "W2": torch.cat([self.l2.weight.flatten(), self.l2.bias]),
+            "W3": torch.cat([self.l3.weight.flatten(), self.l3.bias]),
+        }
 
 
 class FlatToWeightDict(torch.nn.Module):
@@ -44,13 +79,19 @@ class FlatToWeightDict(torch.nn.Module):
         }
 
 
-def build_generator(name: str, mps_target: int = OPTION1_PARAMS) -> torch.nn.Module:
+def build_generator(name: str, mps_target: int = OPTION1_PARAMS, low_rank_target: int = OPTION1_PARAMS,
+                     seed: int = 0, siren: bool = False) -> torch.nn.Module:
     if name == "option1":
         return QuantumWeightGenerator(seed=0)
+    if name == "direct":
+        return DirectGenerator(siren_init=siren)
     if name == "low_rank":
-        return FlatToWeightDict(LowRankGenerator(out_dim=TOTAL_WEIGHTS, target_param_count=OPTION1_PARAMS))
+        return FlatToWeightDict(LowRankGenerator(out_dim=TOTAL_WEIGHTS, target_param_count=low_rank_target))
     if name == "mps":
-        return FlatToWeightDict(MPSGenerator(out_dim=TOTAL_WEIGHTS, target_param_count=mps_target))
+        # MPS_rand_state has its own RNG, not covered by torch.manual_seed (confirmed
+        # 2026-08-01: two unseeded calls gave different tensors) -- must pass seed explicitly
+        # or every "different seed" MPS run silently reuses whatever quimb's default state gives.
+        return FlatToWeightDict(MPSGenerator(out_dim=TOTAL_WEIGHTS, target_param_count=mps_target, seed=seed))
     raise ValueError(f"unknown generator {name!r}")
 
 
@@ -74,7 +115,7 @@ def make_bc(n: int, seed: int):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("generator", choices=["option1", "low_rank", "mps"])
+    parser.add_argument("generator", choices=["option1", "low_rank", "mps", "direct"])
     parser.add_argument("lambda_bc", type=float)
     parser.add_argument("--steps", type=int, default=18000)
     parser.add_argument("--n_colloc", type=int, default=1024)
@@ -85,21 +126,38 @@ def main() -> None:
     parser.add_argument("--holdout_n", type=int, default=4096)
     parser.add_argument("--mps_target", type=int, default=OPTION1_PARAMS,
                          help="only affects generator=mps; step C bond-dim robustness sweep")
+    parser.add_argument("--siren", action="store_true",
+                         help="TargetPINN(activation='siren') + SIREN init on DirectGenerator "
+                              "(only meaningful for generator=direct)")
+    parser.add_argument("--low_rank_target", type=int, default=OPTION1_PARAMS,
+                         help="only affects generator=low_rank; task 2 capacity-matched scaling")
     args = parser.parse_args()
 
+    # GPU only for the pure-classical generators. Benchmarked directly (not assumed):
+    # the quantum circuit (option1) is *slower* on CUDA (28.3ms/step vs 13.4ms/step CPU,
+    # 9-qubit/512-amplitude statevectors are too small to amortize kernel-launch overhead).
+    # The classical MLP + PDE-residual autograd is a wash at M=4096 (7.3 vs 8.2ms/step) but
+    # ~2x faster on CUDA at M=16384 (16.8 vs 8.2ms/step) with GPU time nearly flat as M grows
+    # further -- real, growing payoff, zero cost at today's M, so default to it when available.
+    device = torch.device("cuda" if torch.cuda.is_available() and args.generator != "option1" else "cpu")
+
     torch.manual_seed(args.seed)
-    model = TargetPINN()
-    gen = build_generator(args.generator, mps_target=args.mps_target)
+    model = TargetPINN(activation="siren" if args.siren else "tanh").to(device)
+    gen = build_generator(args.generator, mps_target=args.mps_target,
+                           low_rank_target=args.low_rank_target, seed=args.seed,
+                           siren=args.siren).to(device)
     params = list(gen.parameters())
     n_params = sum(p.numel() for p in params)
 
     x, y, t = make_colloc(args.n_colloc, args.seed)
     xb, yb, tb, ub, vb = make_bc(args.n_bc, args.seed)
+    x, y, t = (v.to(device).detach().requires_grad_(True) for v in (x, y, t))
+    xb, yb, tb, ub, vb = (v.to(device) for v in (xb, yb, tb, ub, vb))
 
     opt = torch.optim.Adam(params, lr=0.01)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.steps, eta_min=1e-5)
 
-    print(f"generator={args.generator}  n_params={n_params}  lambda_bc={args.lambda_bc}  "
+    print(f"generator={args.generator}  device={device}  n_params={n_params}  lambda_bc={args.lambda_bc}  "
           f"n_colloc={args.n_colloc}  n_bc={args.n_bc}  steps={args.steps}")
 
     t0 = time.perf_counter()
@@ -117,7 +175,7 @@ def main() -> None:
     result = {
         "generator": args.generator, "n_params": n_params, "lambda_bc": args.lambda_bc,
         "n_colloc": args.n_colloc, "n_bc": args.n_bc, "steps": args.steps, "seed": args.seed,
-        "pde_loss": round(pde.item(), 8), "bc_loss": round(bc.item(), 8),
+        "siren": args.siren, "pde_loss": round(pde.item(), 8), "bc_loss": round(bc.item(), 8),
         "total": round(pde.item() + bc.item(), 8), "elapsed_s": round(elapsed, 1),
     }
     print(f"\nFinal  pde={result['pde_loss']:.7f}  bc={result['bc_loss']:.7f}  sum={result['total']:.7f}  "
@@ -129,6 +187,8 @@ def main() -> None:
     if args.holdout:
         xh, yh, th = make_colloc(args.holdout_n, args.seed + 90000)
         xhb, yhb, thb, uhb, vhb = make_bc(args.holdout_n, args.seed + 90000)
+        xh, yh, th = (v.to(device).detach().requires_grad_(True) for v in (xh, yh, th))
+        xhb, yhb, thb, uhb, vhb = (v.to(device) for v in (xhb, yhb, thb, uhb, vhb))
         w_final = gen()
         pde_h, bc_h = compute_burgers_loss(model, xh, yh, th, xhb, yhb, thb, uhb, vhb, w_final)
         result["holdout_n"] = args.holdout_n
@@ -140,10 +200,18 @@ def main() -> None:
 
     out_dir = Path(__file__).resolve().parent / "results"
     out_dir.mkdir(exist_ok=True)
-    suffix = f"_mpstarget{args.mps_target}" if args.generator == "mps" and args.mps_target != OPTION1_PARAMS else ""
+    suffix = ""
+    if args.generator == "mps" and args.mps_target != OPTION1_PARAMS:
+        suffix = f"_mpstarget{args.mps_target}"
+    if args.generator == "low_rank" and args.low_rank_target != OPTION1_PARAMS:
+        suffix = f"_target{args.low_rank_target}"
     out_path = out_dir / f"{args.generator}_seed{args.seed}{suffix}.json"
     out_path.write_text(json.dumps(result, indent=2))
     print(f"Saved {out_path}")
+
+    weights_path = out_dir / f"{args.generator}_seed{args.seed}{suffix}_weights.pt"
+    torch.save({k: v.cpu() for k, v in gen.state_dict().items()}, weights_path)
+    print(f"Saved {weights_path}")
 
 
 if __name__ == "__main__":

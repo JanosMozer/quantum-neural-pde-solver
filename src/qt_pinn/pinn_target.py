@@ -18,8 +18,11 @@ class TargetPINN(nn.Module):
     Weights dict keys: W1 (112,), W2 (272,), W3 (34,)
     """
 
-    def __init__(self) -> None:
+    def __init__(self, activation: str = "tanh") -> None:
         super().__init__()
+        if activation not in ("tanh", "siren"):
+            raise ValueError(f"unknown activation {activation!r}")
+        self.activation = activation
         self.fourier = FourierFeatureMap()
 
     def _unpack(self, weights: dict[str, torch.Tensor]) -> tuple:
@@ -50,8 +53,14 @@ class TargetPINN(nn.Module):
 
         w1, b1, w2, b2, w3, b3 = self._unpack(weights)
 
-        h = F.tanh(F.linear(feats, w1, b1))  # (batch, 16)
-        h = F.tanh(F.linear(h, w2, b2))       # (batch, 16)
+        if self.activation == "siren":
+            # omega_0=30, exact formula from Sitzmann et al. 2020 (arXiv:2006.09661)
+            # and its official repo (vsitzmann/siren, modules.py Sine.forward).
+            h = torch.sin(30 * F.linear(feats, w1, b1))  # (batch, 16)
+            h = torch.sin(30 * F.linear(h, w2, b2))       # (batch, 16)
+        else:
+            h = F.tanh(F.linear(feats, w1, b1))  # (batch, 16)
+            h = F.tanh(F.linear(h, w2, b2))       # (batch, 16)
         out = F.linear(h, w3, b3)             # (batch, 2)
         return out
 
