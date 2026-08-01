@@ -1,14 +1,3 @@
-"""Classical baseline generator 2: a trainable matrix product state (MPS).
-
-Parametrized by target_param_count, not a hardcoded number (same reason as low_rank.py).
-Uses quimb only to construct a well-formed random MPS (correct bond structure); the
-forward-pass contraction is done by hand in plain torch, per the Gate 3 finding: quimb's
-own to_dense() contraction does not support torch tensors that require grad on this
-installed version (cotengra falls back to a numpy path and crashes). The manual
-contraction was cross-checked exactly against quimb's own reference in
-test_quimb_autograd.py before being reused here.
-"""
-
 import torch
 import torch.nn as nn
 import quimb.tensor as qtn
@@ -40,7 +29,7 @@ def _pick_num_sites_and_bond_dim(out_dim: int, target_param_count: int) -> tuple
     num_sites = max(num_sites, 2)  # need at least 2 sites for the chain contraction to make sense
 
     best_bond_dim, best_diff = 1, None
-    for bond_dim in range(1, 33):
+    for bond_dim in range(1, 201):
         count = _param_count_for(num_sites, bond_dim)
         diff = abs(count - target_param_count)
         if best_diff is None or diff < best_diff:

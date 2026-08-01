@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import torch
 import numpy as np
 from qt_pinn.pinn_target import TargetPINN
-from qt_pinn.physics_loss import compute_burgers_loss
+from pdes.burgers2d.physics_loss import compute_burgers_loss
 from scripts.train import make_colloc, make_bc
 
 RECIPES = {

@@ -5,9 +5,9 @@ practical question instead: does a MODEST depth increase (a few x, not thousands
 any continuous improvement in bc_loss, and does it stay stable while doing so (Vyskubov et
 al., arXiv:2604.06007, found depth-scaling is often unreliable/destabilizing for QNNs)?
 
-N_LAYERS is baked into qt_pinn.qnn_generator at import time from config.yaml, so the
-launcher (run_sweep.sh) edits config.yaml's quantum.n_layers before each subprocess call,
-exactly like scripts/train.py already requires. This script does not touch config.yaml
+N_LAYERS is baked into qt_pinn.qnn_generator at import time from pdes/burgers2d/config.yaml,
+so the launcher (run_sweep.sh) edits that config's quantum.n_layers before each subprocess
+call, exactly like scripts/train.py already requires. This script does not touch the config
 itself, only reads the resulting N_LAYERS via the import, and records it in the output
 for verification.
 
@@ -26,7 +26,7 @@ import torch
 import numpy as np
 from qt_pinn.pinn_target import TargetPINN
 from qt_pinn.qnn_generator import QuantumWeightGenerator, N_LAYERS, N_QUBITS
-from qt_pinn.physics_loss import compute_burgers_loss
+from pdes.burgers2d.physics_loss import compute_burgers_loss
 from qt_pinn.diagnostics import qgn
 
 

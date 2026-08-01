@@ -13,7 +13,7 @@ from qt_pinn.learned_proj.classical_generator import ClassicalWeightGenerator as
 import json, torch, numpy as np
 from qt_pinn.config_loader import load as _load_cfg
 from qt_pinn.pinn_target import TargetPINN
-from qt_pinn.physics_loss import compute_burgers_loss
+from pdes.burgers2d.physics_loss import compute_burgers_loss
 from scripts.train import (
     SEED, N_COLLOC, N_BC, LAMBDA_BC, ADAPTIVE_LAMBDA, ALPHA,
     ADAPT_EVERY, ADAPT_WARMUP, LAMBDA_MAX, LOG_EVERY,

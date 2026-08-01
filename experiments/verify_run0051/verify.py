@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 import torch
 from qt_pinn.pinn_target import TargetPINN
 from qt_pinn.learned_proj.qnn_generator import QuantumWeightGeneratorLP
-from qt_pinn.physics_loss import compute_burgers_loss
+from pdes.burgers2d.physics_loss import compute_burgers_loss
 
 
 def make_colloc(n, seed):

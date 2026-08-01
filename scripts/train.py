@@ -8,7 +8,7 @@ import numpy as np
 from qt_pinn.config_loader import load as _load_cfg
 from qt_pinn.pinn_target import TargetPINN
 from qt_pinn.qnn_generator import QuantumWeightGenerator
-from qt_pinn.physics_loss import compute_burgers_loss
+from pdes.burgers2d.physics_loss import compute_burgers_loss
 
 # ── Load all parameters from config.yaml ────────────────────────────────────
 _cfg            = _load_cfg()["training"]

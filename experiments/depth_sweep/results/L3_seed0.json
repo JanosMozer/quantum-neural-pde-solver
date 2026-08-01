@@ -1,0 +1,21 @@
+{
+  "n_layers": 3,
+  "n_qubits": 11,
+  "n_circuit_params": 99,
+  "n_params": 100,
+  "lambda_bc": 1.0,
+  "siren": false,
+  "n_colloc": 16,
+  "n_bc": 8,
+  "steps": 3,
+  "seed": 0,
+  "pde_loss": 0.03402398,
+  "bc_loss": 0.66153419,
+  "total": 0.69555817,
+  "elapsed_s": 0.2,
+  "qgn_mean": 11.634111,
+  "qgn_std": 9.357142,
+  "qgn_max": 24.006781,
+  "qgn_last_1000_mean": 11.634111,
+  "qgn_last_1000_std": 9.357142
+}

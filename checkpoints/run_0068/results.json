@@ -1,0 +1,12 @@
+{
+  "run_id": "run_0068",
+  "pde_loss": 0.2006294,
+  "bc_loss": 0.02860258,
+  "total": 0.22923198,
+  "holdout_pde_loss": 0.32696229,
+  "holdout_bc_loss": 0.02917777,
+  "holdout_total": 0.35614006,
+  "pde_ratio": 1.6297,
+  "lambda_final": 5.0,
+  "n_params": 218725
+}

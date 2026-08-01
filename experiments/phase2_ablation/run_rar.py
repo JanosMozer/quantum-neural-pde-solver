@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import torch
 from qt_pinn.pinn_target import TargetPINN
-from qt_pinn.physics_loss import compute_burgers_loss
+from pdes.burgers2d.physics_loss import compute_burgers_loss
 from run_ablation import DirectGenerator, make_bc
 
 

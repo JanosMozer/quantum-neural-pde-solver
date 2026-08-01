@@ -8,12 +8,18 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
+from qt_pinn.config_loader import load as _load_cfg
 
-IN_DIM, H1, H2, OUT_DIM = 6, 16, 16, 2
+_cfg = _load_cfg()
+IN_DIM, OUT_DIM = 6, 2
+H1, H2 = _cfg["mlp"]["hidden"]
+OMEGA_0 = _cfg["mlp"].get("omega_0", 30.0)
+FOURIER_SIGMA = _cfg["fourier"]["sigma"]
+FOURIER_SEED  = _cfg["fourier"]["seed"]
 
 
 class _FourierMap(nn.Module):
-    def __init__(self, sigma: float = 1.0, seed: int = 42) -> None:
+    def __init__(self, sigma: float = FOURIER_SIGMA, seed: int = FOURIER_SEED) -> None:
         super().__init__()
         torch.manual_seed(seed)
         self.register_buffer("B", torch.randn(3, 3) * sigma)
@@ -43,8 +49,8 @@ class PureClassicalPINN(nn.Module):
 
     def forward(self, x: torch.Tensor, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         feats = self.fourier(torch.stack([x, y, t], dim=-1))
-        h = F.tanh(self.fc1(feats))
-        h = F.tanh(self.fc2(h))
+        h = torch.sin(OMEGA_0 * self.fc1(feats))
+        h = torch.sin(OMEGA_0 * self.fc2(h))
         return self.fc3(h)
 
 

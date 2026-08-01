@@ -4,18 +4,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from qt_pinn.fourier import FourierFeatureMap
+from qt_pinn.config_loader import load as _load
+
+_m = _load()["mlp"]
 
 IN_DIM = 6
-H1 = 16
-H2 = 16
+H1, H2 = _m["hidden"]
 OUT_DIM = 2
+OMEGA_0 = _m.get("omega_0", 30.0)  # SIREN periodic activation frequency, Sitzmann et al. 2020
 
 
 class TargetPINN(nn.Module):
     """MLP for 2D Burgers: (x,y,t) -> (u, v).
 
     Accepts weights dict from QuantumWeightGenerator (or any static dict).
-    Weights dict keys: W1 (112,), W2 (272,), W3 (34,)
+    Weights dict keys: W1 (IN_DIM*H1+H1,), W2 (H1*H2+H2,), W3 (H2*OUT_DIM+OUT_DIM,)
     """
 
     def __init__(self, activation: str = "tanh") -> None:
@@ -26,9 +29,9 @@ class TargetPINN(nn.Module):
         self.fourier = FourierFeatureMap()
 
     def _unpack(self, weights: dict[str, torch.Tensor]) -> tuple:
-        W1_flat = weights["W1"]  # 112 = 6*16 + 16
-        W2_flat = weights["W2"]  # 272 = 16*16 + 16
-        W3_flat = weights["W3"]  # 34  = 16*2 + 2
+        W1_flat = weights["W1"]  # IN_DIM*H1 + H1
+        W2_flat = weights["W2"]  # H1*H2 + H2
+        W3_flat = weights["W3"]  # H2*OUT_DIM + OUT_DIM
 
         w1 = W1_flat[:IN_DIM * H1].reshape(H1, IN_DIM)
         b1 = W1_flat[IN_DIM * H1:]
@@ -54,14 +57,14 @@ class TargetPINN(nn.Module):
         w1, b1, w2, b2, w3, b3 = self._unpack(weights)
 
         if self.activation == "siren":
-            # omega_0=30, exact formula from Sitzmann et al. 2020 (arXiv:2006.09661)
-            # and its official repo (vsitzmann/siren, modules.py Sine.forward).
-            h = torch.sin(30 * F.linear(feats, w1, b1))  # (batch, 16)
-            h = torch.sin(30 * F.linear(h, w2, b2))       # (batch, 16)
+            # omega_0 from config.yaml (Sitzmann et al. 2020, arXiv:2006.09661;
+            # official repo vsitzmann/siren, modules.py Sine.forward).
+            h = torch.sin(OMEGA_0 * F.linear(feats, w1, b1))  # (batch, H1)
+            h = torch.sin(OMEGA_0 * F.linear(h, w2, b2))       # (batch, H2)
         else:
-            h = F.tanh(F.linear(feats, w1, b1))  # (batch, 16)
-            h = F.tanh(F.linear(h, w2, b2))       # (batch, 16)
-        out = F.linear(h, w3, b3)             # (batch, 2)
+            h = F.tanh(F.linear(feats, w1, b1))  # (batch, H1)
+            h = F.tanh(F.linear(h, w2, b2))       # (batch, H2)
+        out = F.linear(h, w3, b3)                 # (batch, 2)
         return out
 
 
