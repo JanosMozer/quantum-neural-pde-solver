@@ -1,0 +1,17 @@
+{
+  "label": "split+adaptive",
+  "split": true,
+  "adaptive": true,
+  "sigma_xy": 0.1,
+  "sigma_t": 1.0,
+  "lambda_max": 3.0,
+  "n_params": 1346,
+  "steps": 4000,
+  "lambda_final": 3.0,
+  "pde_loss": 0.09656683,
+  "bc_loss": 0.04916272,
+  "total": 0.14572955,
+  "holdout_pde_loss": 0.29029351,
+  "holdout_bc_loss": 0.05021927,
+  "holdout_total": 0.34051278
+}

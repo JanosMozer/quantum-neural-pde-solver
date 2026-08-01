@@ -1,0 +1,17 @@
+{
+  "label": "joint+adaptive",
+  "split": false,
+  "adaptive": true,
+  "sigma_xy": 0.1,
+  "sigma_t": null,
+  "lambda_max": 3.0,
+  "n_params": 1346,
+  "steps": 4000,
+  "lambda_final": 3.0,
+  "pde_loss": 0.07822128,
+  "bc_loss": 0.01726593,
+  "total": 0.0954872,
+  "holdout_pde_loss": 0.08374832,
+  "holdout_bc_loss": 0.01716578,
+  "holdout_total": 0.10091409
+}
