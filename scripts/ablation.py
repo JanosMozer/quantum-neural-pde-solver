@@ -146,10 +146,12 @@ def main() -> None:
 
     out_dir = Path("checkpoints/ablation")
     out_dir.mkdir(parents=True, exist_ok=True)
-    suffix = f"_bw{args.bottleneck_width}"
+    suffix = f"_bw{args.bottleneck_width}_seed{seed}"
     results = []
     for name in args.generators:
         result = run_one(name, gens[name], model, args.steps, train_data, holdout_data)
+        result["seed"] = seed
+        result["bottleneck_width"] = args.bottleneck_width
         results.append(result)
         torch.save(gens[name].state_dict(), out_dir / f"{name}{suffix}_gen.pt")
 
