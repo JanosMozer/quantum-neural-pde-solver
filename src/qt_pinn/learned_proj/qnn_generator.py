@@ -24,15 +24,15 @@ class QuantumWeightGeneratorLP(nn.Module):
       proj: Linear(N_STATES, TOTAL_WEIGHTS), no fixed partition
     """
 
-    def __init__(self) -> None:
+    def __init__(self, bottleneck_width: int = 64) -> None:
         super().__init__()
         q_shape = (N_LAYERS, N_QUBITS, 3)
         self.q_weights = nn.Parameter(torch.randn(q_shape) * 0.1)
-        # bottleneck projection: N_STATES -> 64 -> TOTAL_WEIGHTS
+        # bottleneck projection: N_STATES -> bottleneck_width -> TOTAL_WEIGHTS
         self.proj = nn.Sequential(
-            nn.Linear(N_STATES, 64),
+            nn.Linear(N_STATES, bottleneck_width),
             nn.Tanh(),
-            nn.Linear(64, TOTAL_WEIGHTS),
+            nn.Linear(bottleneck_width, TOTAL_WEIGHTS),
         )
 
     def forward(self) -> dict[str, torch.Tensor]:
