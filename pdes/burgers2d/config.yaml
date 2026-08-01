@@ -1,5 +1,5 @@
 fourier:
-  sigma: 0.5
+  sigma: 0.1
   seed:  42
 
 quantum:
@@ -8,6 +8,7 @@ quantum:
 
 mlp:
   hidden: [32, 32]
+  omega_0: 30.0   # SIREN periodic activation frequency (Sitzmann et al. 2020)
 
 physics:
   nu: 0.003183
@@ -19,7 +20,7 @@ training:
   structured_bc: false
   weight_reg:   0.1   # L2 on generated MLP weights only (no double penalty)
 
-  lambda_bc:             5.0
+  lambda_bc:             1.0
   adaptive_lambda:       false
   adaptive_lambda_alpha: 0.9
   adaptive_lambda_every: 1
@@ -31,9 +32,10 @@ training:
   warmup_steps:     0
   resample_every:   0
   log_every: 500
+  grad_clip_norm:   1.0   # train_gpu.py only — fixes Adam loss spikes at lambda_bc>=1
 
   adam:
-    lr:           0.01
+    lr:           0.005
     steps:        18000
     weight_decay: 0.0   # removed — weight_reg already regularises; double penalty hurts amplitude
 

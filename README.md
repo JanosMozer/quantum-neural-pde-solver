@@ -63,11 +63,11 @@ Plain assert-based self-tests, no framework, run directly:
 ## Layout
 
 ```
-src/qt_pinn/          the library: circuit, PINN, physics loss, classification, classical baselines
+pdes/burgers2d/        the PDE: physics residual (physics_loss.py) + config.yaml (circuit/training hyperparameters)
+src/qt_pinn/           the library: circuit, PINN, classification, classical baselines
 scripts/               entry points: train, export, inference, classify
 tests/                 self-tests for the library code
 experiments/           self-contained one-off studies (currently: the RFF dequantization warm-up)
 checkpoints/           trained runs (be deliberate about committing new ones, see .gitignore)
 research/              the two LaTeX writeups + PDFs, verified paper source notes, hypotheses, dated logs
-config.yaml            single source of truth for circuit/training hyperparameters
 ```

@@ -1,14 +1,3 @@
-"""Classical baseline generator 1: a random low-rank projection.
-
-Redesigned 2026-07-31: the original version (a learned nn.Linear(r, out_dim)) could not
-go below out_dim+1 trainable parameters even at rank 1, useless once the real target
-(Option 1's actual 82 parameters) turned out to be far smaller than out_dim=418. Fixed
-by flipping which side is learned: a FIXED random matrix (not trained) maps a small
-learned coefficient vector up to out_dim. This gives exactly target_param_count learned
-parameters for any target, including ones smaller than out_dim, and is structurally
-closer to Option 1 anyway (few learned numbers, fixed transform, large output).
-"""
-
 import torch
 import torch.nn as nn
 
