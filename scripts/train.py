@@ -48,11 +48,23 @@ def make_colloc(n: int) -> tuple[torch.Tensor, ...]:
     return x, y, t
 
 
-def make_bc(n: int) -> tuple[torch.Tensor, ...]:
-    """IC at t=0: u=sin(πx)cos(πy), v=-cos(πx)sin(πy)."""
-    x = torch.FloatTensor(n).uniform_(-1, 1)
-    y = torch.FloatTensor(n).uniform_(-1, 1)
-    t = torch.zeros(n)
+def make_bc(n: int, structured: bool = False) -> tuple[torch.Tensor, ...]:
+    """IC at t=0: u=sin(πx)cos(πy), v=-cos(πx)sin(πy).
+
+    structured=True: grid sampling — guarantees full (x,y) coverage.
+    structured=False: random uniform — fast but may cluster in 2D.
+    """
+    if structured:
+        side = max(1, int(n ** 0.5))          # e.g. n=256 → 16×16 grid
+        xs = torch.linspace(-1, 1, side)
+        ys = torch.linspace(-1, 1, side)
+        xg, yg = torch.meshgrid(xs, ys, indexing="ij")
+        x = xg.flatten()[:n]
+        y = yg.flatten()[:n]
+    else:
+        x = torch.FloatTensor(n).uniform_(-1, 1)
+        y = torch.FloatTensor(n).uniform_(-1, 1)
+    t = torch.zeros(len(x))
     u = torch.sin(torch.pi * x) * torch.cos(torch.pi * y)
     v = -torch.cos(torch.pi * x) * torch.sin(torch.pi * y)
     return x, y, t, u, v

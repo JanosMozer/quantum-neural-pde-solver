@@ -1,0 +1,8 @@
+{
+  "run_id": "run_0059",
+  "generator": "classical",
+  "pde_loss": 0.10706434,
+  "bc_loss": 0.03784085,
+  "total": 0.14490518,
+  "n_params": 60514
+}

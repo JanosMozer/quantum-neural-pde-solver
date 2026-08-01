@@ -1,44 +1,43 @@
 fourier:
-  sigma: 1.0   # std-dev of Gaussian frequency matrix B; higher = higher-freq features
-  seed:  42     # fixed RNG seed; must be identical at train and inference time
+  sigma: 1.0
+  seed:  42
 
 quantum:
-  n_layers:      3   # circuit depth; re-uploading between each layer
-  partition_seed: 0  # seed for fixed random basis assignment; try 1,2,42 if stuck
+  n_layers:      3
+  partition_seed: 0
 
 mlp:
-  hidden: [16, 16]  # [H1, H2]; changing this changes total_weights and thus n_qubits
-  # in_dim = 6 (fixed); out_dim = 2 (u, v)
+  hidden: [16, 16]
 
 physics:
-  nu: 0.003183   # kinematic viscosity ν = 0.01/π
+  nu: 0.003183
 
 training:
-  seed:     0
-  n_colloc: 512
-  n_bc:     128
+  seed:         0
+  n_colloc:     256   # 512 hurts — circuit's 81 params can't cover more constraints
+  n_bc:         64
+  structured_bc: false
+  weight_reg:   0.1   # L2 on generated MLP weights only (no double penalty)
 
-  # ── Lambda — Wang et al. 2020 arXiv:2001.04536 ───────────────────────────
-  lambda_bc:             7.0     # between λ=5 (pde best) and λ=10 (bc best)
-  adaptive_lambda:       false  # true = auto-tune via gradient norm ratio
-  adaptive_lambda_alpha: 0.9    # EMA momentum (paper: 0.9)
-  adaptive_lambda_every: 1      # update every N steps
-  adaptive_lambda_warmup: 1000   # steps before annealing starts
-  lambda_max:            5.0    # hard cap
+  lambda_bc:             7.0
+  adaptive_lambda:       false
+  adaptive_lambda_alpha: 0.9
+  adaptive_lambda_every: 1
+  adaptive_lambda_warmup: 1000
+  lambda_max:            5.0
 
-  # ── LR schedule ──────────────────────────────────────────────────────────
-  cosine_annealing: true     # CosineAnnealingLR after warmup
-  cosine_eta_min:   1.0e-5   # minimum lr at end of cycle
-  warmup_steps:     0      # linear warmup: lr goes 0 → adam.lr over this many steps
-
+  cosine_annealing: true
+  cosine_eta_min:   1.0e-5
+  warmup_steps:     0
+  resample_every:   0
   log_every: 500
 
   adam:
-    lr:    0.01   # peak lr; cosine decays to cosine_eta_min over adam.steps
-    steps: 18000
-    weight_decay: 1.0e-3   # L2 regularisation on proj layer — prevents memorisation
+    lr:           0.01
+    steps:        18000
+    weight_decay: 0.0   # removed — weight_reg already regularises; double penalty hurts amplitude
 
   lbfgs:
     lr:       0.1
-    steps:    0    # disabled; set > 0 to re-enable
+    steps:    0
     max_iter: 10

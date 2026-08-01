@@ -25,7 +25,11 @@ from scripts.train import (
     _next_run_dir, make_colloc, make_bc, forward_losses, adaptive_lambda,
 )
 from qt_pinn.config_loader import load as _cfg_lp
-WEIGHT_DECAY = _cfg_lp()["training"]["adam"].get("weight_decay", 0.0)
+_t = _cfg_lp()["training"]
+WEIGHT_DECAY    = _t["adam"].get("weight_decay", 0.0)
+RESAMPLE_EVERY  = _t.get("resample_every", 0)
+STRUCTURED_BC   = _t.get("structured_bc", False)
+WEIGHT_REG      = _t.get("weight_reg", 0.0)  # L2 reg on generated MLP weights
 
 
 def main_lp() -> None:
@@ -45,17 +49,19 @@ def main_lp() -> None:
     print(f"Params: {n_total:,}  (circuit={n_q}, proj={n_total - n_q})")
 
     x, y, t               = make_colloc(N_COLLOC)
-    x_bc, y_bc, t_bc, u_bc, v_bc = make_bc(N_BC)
+    x_bc, y_bc, t_bc, u_bc, v_bc = make_bc(N_BC, structured=STRUCTURED_BC)
 
     lam = float(LAMBDA_BC)
 
     def _step(opt, step):
         nonlocal lam
         opt.zero_grad()
-        pde, bc = forward_losses(model, gen, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc)
+        weights = gen()
+        pde, bc = compute_burgers_loss(model, x, y, t, x_bc, y_bc, t_bc, u_bc, v_bc, weights)
         if ADAPTIVE_LAMBDA and step >= ADAPT_WARMUP and step % ADAPT_EVERY == 0:
             lam = adaptive_lambda(pde, bc, params, lam, ALPHA)
-        loss = pde + lam * bc
+        reg = sum(w.pow(2).mean() for w in weights.values()) if WEIGHT_REG > 0 else 0.0
+        loss = pde + lam * bc + WEIGHT_REG * reg
         loss.backward()
         opt.step()
         return loss.item(), pde.item(), bc.item()
@@ -75,6 +81,9 @@ def main_lp() -> None:
     print(f"\nAdam  lr=0→{ADAM_LR}→{lr_end}  warmup={WARMUP_STEPS}  steps={ADAM_STEPS}  cosine={COSINE_ANNEAL}")
     print(f"{'step':>6}  {'total':>12}  {'pde':>12}  {'bc':>12}  {'λ':>8}  {'lr':>10}")
     for step in range(ADAM_STEPS):
+        if RESAMPLE_EVERY > 0 and step % RESAMPLE_EVERY == 0 and step > 0:
+            x, y, t = make_colloc(N_COLLOC)
+            x_bc, y_bc, t_bc, u_bc, v_bc = make_bc(N_BC, structured=STRUCTURED_BC)
         total, pde, bc = _step(opt, step)
         if sched: sched.step()
         if step % LOG_EVERY == 0:
