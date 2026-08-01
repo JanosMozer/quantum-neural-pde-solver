@@ -35,8 +35,8 @@ class GPUWeightGeneratorLP(QuantumWeightGeneratorLP):
     any input tensor lives elsewhere.
     """
 
-    def __init__(self, device: torch.device) -> None:
-        super().__init__()
+    def __init__(self, device: torch.device, bottleneck_width: int = 64) -> None:
+        super().__init__(bottleneck_width)
         self.proj.to(device)
         self._device = device
 

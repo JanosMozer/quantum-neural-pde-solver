@@ -19,6 +19,7 @@ from qt_pinn.pinn_target import TargetPINN
 from qt_pinn.qnn_generator import TOTAL_WEIGHTS, W1_SIZE, W2_SIZE, W3_SIZE
 from qt_pinn.baselines.low_rank import LowRankGenerator
 from qt_pinn.baselines.mps import MPSGenerator
+from qt_pinn.baselines.classical_frontend import ClassicalFrontendGeneratorLP
 from pdes.burgers2d.physics_loss import compute_burgers_loss
 from scripts.train_gpu import GPUWeightGeneratorLP, DEVICE, make_colloc, make_bc
 
@@ -51,12 +52,14 @@ class FlatToWeightDict(torch.nn.Module):
         }
 
 
-def build_generators(device: torch.device) -> tuple[dict[str, torch.nn.Module], int]:
-    quantum = GPUWeightGeneratorLP(device)
+def build_generators(device: torch.device, bottleneck_width: int = 64) -> tuple[dict[str, torch.nn.Module], int]:
+    quantum = GPUWeightGeneratorLP(device, bottleneck_width)
     n_target = sum(p.numel() for p in quantum.parameters())
     low_rank = FlatToWeightDict(LowRankGenerator(TOTAL_WEIGHTS, n_target)).to(device)
     mps      = FlatToWeightDict(MPSGenerator(TOTAL_WEIGHTS, n_target)).to(device)
-    return {"quantum": quantum, "low_rank": low_rank, "mps": mps}, n_target
+    classical_frontend = ClassicalFrontendGeneratorLP().to(device)
+    return {"quantum": quantum, "low_rank": low_rank, "mps": mps,
+            "classical_frontend": classical_frontend}, n_target
 
 
 def run_one(name: str, gen: torch.nn.Module, model: torch.nn.Module, steps: int,
@@ -107,8 +110,10 @@ def run_one(name: str, gen: torch.nn.Module, model: torch.nn.Module, steps: int,
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--generators", nargs="+", default=["quantum", "low_rank", "mps"],
-                         choices=["quantum", "low_rank", "mps"])
+                         choices=["quantum", "low_rank", "mps", "classical_frontend"])
     parser.add_argument("--steps", type=int, default=STEPS, help="override adam.steps from config")
+    parser.add_argument("--bottleneck_width", type=int, default=64,
+                         help="quantum/proj bottleneck width (only affects the 'quantum' generator)")
     args = parser.parse_args()
 
     torch.manual_seed(SEED)
@@ -119,19 +124,21 @@ def main() -> None:
     xhb, yhb, thb, uhb, vhb = make_bc(N_BC, DEVICE)
 
     model = TargetPINN().to(DEVICE)
-    gens, n_target = build_generators(DEVICE)
-    print(f"Matched generator parameter budget: {n_target:,} (quantum's actual total)")
+    gens, n_target = build_generators(DEVICE, args.bottleneck_width)
+    print(f"Matched generator parameter budget: {n_target:,} (quantum's actual total, "
+          f"bottleneck_width={args.bottleneck_width})")
     print(f"lambda_bc={LAMBDA_BC}  n_colloc={N_COLLOC}  n_bc={N_BC}  steps={args.steps}  "
           f"grad_clip={GRAD_CLIP}  device={DEVICE}")
 
     out_dir = Path("checkpoints/ablation")
     out_dir.mkdir(parents=True, exist_ok=True)
+    suffix = f"_bw{args.bottleneck_width}"
     results = []
     for name in args.generators:
         result = run_one(name, gens[name], model, args.steps,
                           x, y, t, xb, yb, tb, ub, vb, xh, yh, th, xhb, yhb, thb, uhb, vhb)
         results.append(result)
-        torch.save(gens[name].state_dict(), out_dir / f"{name}_gen.pt")
+        torch.save(gens[name].state_dict(), out_dir / f"{name}{suffix}_gen.pt")
 
     print("\n" + "=" * 78)
     print(f"{'generator':10s}  {'params':>10s}  {'train pde':>10s}  {'train bc':>10s}  "
@@ -140,8 +147,9 @@ def main() -> None:
         print(f"{r['generator']:10s}  {r['n_params']:10,d}  {r['pde_loss']:10.5f}  "
               f"{r['bc_loss']:10.5f}  {r['holdout_total']:14.5f}  {r['pde_ratio']:6.2f}x")
 
-    (out_dir / "results.json").write_text(json.dumps(results, indent=2))
-    print(f"\nSaved {out_dir / 'results.json'}")
+    out_path = out_dir / f"results{suffix}.json"
+    out_path.write_text(json.dumps(results, indent=2))
+    print(f"\nSaved {out_path}")
 
 
 if __name__ == "__main__":
