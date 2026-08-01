@@ -17,13 +17,13 @@ N_CIRCUIT_PARAMS = N_LAYERS * N_QUBITS * 3  # 99, matches the quantum circuit ex
 class ClassicalFrontendGeneratorLP(nn.Module):
     """frontend (99 params, low-rank) -> softmax -> proj (identical to QuantumWeightGeneratorLP)."""
 
-    def __init__(self) -> None:
+    def __init__(self, bottleneck_width: int = 64) -> None:
         super().__init__()
         self.frontend = LowRankGenerator(out_dim=N_STATES, target_param_count=N_CIRCUIT_PARAMS)
         self.proj = nn.Sequential(
-            nn.Linear(N_STATES, 64),
+            nn.Linear(N_STATES, bottleneck_width),
             nn.Tanh(),
-            nn.Linear(64, TOTAL_WEIGHTS),
+            nn.Linear(bottleneck_width, TOTAL_WEIGHTS),
         )
 
     def forward(self, inputs: torch.Tensor | None = None) -> dict[str, torch.Tensor]:

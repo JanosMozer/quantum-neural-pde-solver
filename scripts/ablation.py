@@ -57,7 +57,7 @@ def build_generators(device: torch.device, bottleneck_width: int = 64) -> tuple[
     n_target = sum(p.numel() for p in quantum.parameters())
     low_rank = FlatToWeightDict(LowRankGenerator(TOTAL_WEIGHTS, n_target)).to(device)
     mps      = FlatToWeightDict(MPSGenerator(TOTAL_WEIGHTS, n_target)).to(device)
-    classical_frontend = ClassicalFrontendGeneratorLP().to(device)
+    classical_frontend = ClassicalFrontendGeneratorLP(bottleneck_width).to(device)
     return {"quantum": quantum, "low_rank": low_rank, "mps": mps,
             "classical_frontend": classical_frontend}, n_target
 
@@ -122,14 +122,17 @@ def main() -> None:
                          choices=["quantum", "low_rank", "mps", "classical_frontend"])
     parser.add_argument("--steps", type=int, default=STEPS, help="override adam.steps from config")
     parser.add_argument("--bottleneck_width", type=int, default=64,
-                         help="quantum/proj bottleneck width (only affects the 'quantum' generator)")
+                         help="proj bottleneck width, applies to both 'quantum' and 'classical_frontend'")
+    parser.add_argument("--seed", type=int, default=None,
+                         help="override training.seed from config, for multi-seed runs")
     args = parser.parse_args()
 
-    torch.manual_seed(SEED)
+    seed = args.seed if args.seed is not None else SEED
+    torch.manual_seed(seed)
     x, y, t = make_colloc(N_COLLOC, DEVICE)
     xb, yb, tb, ub, vb = make_bc(N_BC, DEVICE)
     train_data = (x, y, t, xb, yb, tb, ub, vb)
-    torch.manual_seed(SEED + 90000)
+    torch.manual_seed(seed + 90000)
     xh, yh, th = make_colloc(N_COLLOC, DEVICE)
     xhb, yhb, thb, uhb, vhb = make_bc(N_BC, DEVICE)
     holdout_data = (xh, yh, th, xhb, yhb, thb, uhb, vhb)
