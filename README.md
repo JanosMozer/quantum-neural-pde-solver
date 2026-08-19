@@ -1,24 +1,14 @@
-# qt-pinn
+# Quantum Neural Solvers for PDEs
 
-Is the quantum circuit necessary? A Quantum-Train-style weight generator (a parameterized
-quantum circuit generates the weights of a classical physics-informed neural network
-solving the 2D Burgers' equation, then the circuit is discarded and only the classical
-weights are deployed), classified against known classical-simulability criteria, and
-ablated against two classical weight generators at matched parameter count.
+A Quantum-Train-style weight generator (a parameterized quantum circuit generates
+the weights of a classical physics-informed neural network solving the 2D Burgers'
+equation, then the circuit is discarded and only the classical weights are deployed),
+classified against known classical-simulability criteria, and ablated against two
+classical weight generators at matched parameter count.
 
 Full research writeup, citations, and the implementation plan: `research/qt_pde_ablation_prop.pdf`
 and `research/qt_pde_ablation_implementation_plan.pdf`. This README is just the practical
 "how to run things" reference.
-
-## Who does what
-
-- **Janos**: the weight generator itself, `src/qt_pinn/qnn_generator.py`, training (`scripts/train.py`),
-  and getting it to converge with a correct (parameter-efficient) weight-mapping scheme.
-- **Petya**: circuit classification (`src/qt_pinn/classification.py`, `scripts/classify_circuit.py`),
-  the classical baseline generators (`src/qt_pinn/baselines/`), and the ablation comparing all three.
-
-Current status and the exact open issues: `research/logs/2026-07-30-janos-first-push.md` and
-`research/logs/2026-07-31-phase1b-classification.md`.
 
 ## Setup
 

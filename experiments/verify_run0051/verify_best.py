@@ -1,6 +1,6 @@
-"""Holdout-verify Janos's two most recent, most relevant checkpoints:
-run_0057 (learned_proj / quantum, his stated "best model so far") and
-run_0059 (his own classical ablation, ClassicalWeightGenerator). Neither
+"""Holdout-verify the two most recent, most relevant checkpoints:
+run_0057 (learned_proj / quantum, stated "best model so far") and
+run_0059 (classical ablation, ClassicalWeightGenerator). Neither
 run saved weights, and neither was ever checked against held-out points,
 despite THEORY.md itself naming held-out relative-L2 error the "gold
 standard" metric. Both sit at Nt/M ~= 188-189 (60083-60514 params on

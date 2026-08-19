@@ -7,7 +7,7 @@ DeepXDE (arXiv:1907.04502), exact procedure (research/papers/EXTRACTED_NOTES.md)
      S to the active set; repeat.
 
 Starts from a small initial collocation set (256, matching the paper's own scale
-and Janos's original config) and grows to a size matched with the uniform-sampling
+and the original config) and grows to a size matched with the uniform-sampling
 baseline (M=4096) by the end of training, so the comparison is fair: same final
 point budget, different selection strategy. BC points stay fixed size (the paper's
 own RAR only refines interior/residual points, not boundary points).
