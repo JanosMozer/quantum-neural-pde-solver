@@ -1,16 +1,3 @@
-"""Reproduce checkpoints/run_0051 exactly (Option 2 / learned_proj, n_params=60083,
-n_colloc=256, n_bc=64, lambda_bc=7.0, weight_decay=0.001, seed=0, 18000 steps,
-cosine annealing), which reported total=0.00436 on its own training set and was
-NEVER checked against held-out points. No weights were saved for that run
-(predates the weight-saving addition), so this reproduces it deterministically
-(same seed, same recipe) rather than reloading it, and adds the held-out check
-that should have existed from the start.
-
-Nt/M = 60083/320 ~= 188, far into the regime already shown this session to
-produce severe overfitting (e.g. low_rank at Nt/M=419/1024~=0.41 gave 281x;
-here Nt/M is ~460x larger than that).
-"""
-
 import sys
 import time
 import json

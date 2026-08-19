@@ -1,18 +1,3 @@
-"""Holdout-verify the two most recent, most relevant checkpoints:
-run_0057 (learned_proj / quantum, stated "best model so far") and
-run_0059 (classical ablation, ClassicalWeightGenerator). Neither
-run saved weights, and neither was ever checked against held-out points,
-despite THEORY.md itself naming held-out relative-L2 error the "gold
-standard" metric. Both sit at Nt/M ~= 188-189 (60083-60514 params on
-256-576 training points), deep in the regime already shown this session
-to produce severe overfitting. Reproduces each exactly via the project's
-own training code (scripts.train's make_colloc/make_bc, same generator
-classes), not reimplemented, then adds the missing holdout check.
-
-Usage: python verify_janos_best.py learned_proj   # reproduces run_0057
-       python verify_janos_best.py classical       # reproduces run_0059
-"""
-
 import sys
 import argparse
 import time
