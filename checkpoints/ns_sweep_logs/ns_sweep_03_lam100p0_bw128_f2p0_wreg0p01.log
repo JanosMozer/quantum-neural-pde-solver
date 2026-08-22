@@ -1,0 +1,28 @@
+Run: ns_sweep_03_lam100p0_bw128_f2p0_wreg0p01  ->  checkpoints/ns_sweep_03_lam100p0_bw128_f2p0_wreg0p01/  device=cpu
+PDE: 2D unsteady incompressible NS, Taylor-Green vortex IC
+     1379 MLP weights, 2048 quantum basis states (2048-dim circuit)
+Batching: colloc=4096 (base 4096 x1), bc=4096 (base 4096 x1)
+Hyperparams: lambda_bc=100.0 weight_reg=0.01 bottleneck=128 fourier_sigma=2.0
+CPU threads: intra_op=4 inter_op=2
+Generator params: 440,262
+
+Adam  lr=0.005->1e-05  steps=6000  cosine=True
+  step         total           pde            bc          lr
+     0     57.381760      0.040879      0.573408  5.00e-03  [2s]
+  1000     54.608753      1.550076      0.530537  4.67e-03  [302s]
+  2000     53.939751      1.920884      0.520132  3.75e-03  [569s]
+  3000     53.656960      2.045256      0.516055  2.50e-03  [803s]
+  4000     53.478573      2.116233      0.513558  1.26e-03  [1090s]
+  5000     53.318794      2.192292      0.511198  3.44e-04  [1332s]
+
+Final  pde=2.2159200  bc=0.5103468  sum=2.7262667  [1668s]
+Holdout pde=3.4044435  bc=0.5256379  pde_ratio=1.5364
+
+Relative L2 vs exact Taylor-Green:
+      t    u_err%    v_err%    p_err%
+   0.00    96.814    96.014   101.005
+   0.25    99.023    98.522   102.421
+   0.50   102.840   102.253   102.071
+   1.00    99.475    98.859   102.143
+
+Saved -> checkpoints/ns_sweep_03_lam100p0_bw128_f2p0_wreg0p01/

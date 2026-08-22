@@ -1,0 +1,20 @@
+{
+  "run_id": "ns_direct_a4",
+  "tier": "A4",
+  "hard_ic": true,
+  "fourier": "tgv",
+  "fourier_sigma": 0.25,
+  "device": "cuda",
+  "seed": 0,
+  "n_colloc": 4096,
+  "n_bc": 4096,
+  "lambda_bc": 10.0,
+  "adam_steps": 6000,
+  "lr": 0.005,
+  "hidden": [
+    32,
+    32
+  ],
+  "n_params": 1443,
+  "pressure_sign": "positive"
+}

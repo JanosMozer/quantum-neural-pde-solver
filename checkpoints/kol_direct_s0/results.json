@@ -1,0 +1,9 @@
+{
+  "run_id": "kol_direct_s0",
+  "pde_loss": 6.05355035077082e-06,
+  "pde_rms": 0.002460396380823793,
+  "bc_loss": 0.0,
+  "gate_pass": true,
+  "n_params": 1763,
+  "elapsed_s": 94.7
+}

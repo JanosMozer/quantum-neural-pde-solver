@@ -1,0 +1,9 @@
+{
+  "run_id": "smoke_kol",
+  "pde_loss": 0.016436738893389702,
+  "pde_rms": 0.12820584578477576,
+  "bc_loss": 0.0,
+  "gate_pass": false,
+  "n_params": 1763,
+  "elapsed_s": 2.1
+}

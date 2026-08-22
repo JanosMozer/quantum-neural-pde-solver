@@ -1,0 +1,23 @@
+{
+  "run_id": "a3_nu0p1_T5",
+  "tier": "A3",
+  "hard_ic": false,
+  "fourier": "tgv",
+  "fourier_sigma": 0.25,
+  "device": "cuda",
+  "seed": 0,
+  "n_colloc": 4096,
+  "n_bc": 4096,
+  "lambda_bc": 20.0,
+  "adam_steps": 8000,
+  "lr": 0.005,
+  "hidden": [
+    32,
+    32
+  ],
+  "n_params": 1507,
+  "pressure_sign": "positive",
+  "nu": 0.1,
+  "t_max": 5.0,
+  "resample_every": 100
+}

@@ -1,0 +1,26 @@
+fourier:
+  mode: kolmogorov
+  n_force: 4          # forcing wavenumber: f_x = A sin(n y)
+  t_max: 5.0
+
+mlp:
+  hidden: [32, 32]
+  out_dim: 3
+
+physics:
+  nu: 0.01
+  n_force: 4
+  f_amp: 1.0          # body-force amplitude
+  domain_x: [0.0, 6.2831853]
+  domain_y: [0.0, 6.2831853]
+  domain_t: [0.0, 5.0]
+
+training:
+  seed: 0
+  n_colloc: 2048
+  n_bc: 2048
+  lambda_bc: 20.0
+  hard_ic: true       # u=v=p=0 at t=0 by construction
+  nu_lo: 0.01
+  nu_hi: 0.1
+  resample_every: 50

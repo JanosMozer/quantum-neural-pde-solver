@@ -1,0 +1,18 @@
+{
+  "run_id": "ns_run_0001",
+  "pde": "ns2d_taylor_green",
+  "generator": "quantum_learned_proj",
+  "device": "cuda",
+  "seed": 0,
+  "n_colloc": 4096,
+  "n_bc": 4096,
+  "adam_lr": 0.005,
+  "adam_steps": 18000,
+  "lambda_bc": 1.0,
+  "weight_reg": 0.1,
+  "cosine": true,
+  "bottleneck_width": 64,
+  "n_qubits": 11,
+  "n_states": 2048,
+  "total_weights": 1379
+}

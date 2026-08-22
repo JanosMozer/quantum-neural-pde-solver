@@ -1,0 +1,20 @@
+{
+  "run_id": "ns_sweep_00_lam50p0_bw128_f2p0_wreg0p01",
+  "pde": "ns2d_taylor_green",
+  "generator": "quantum_learned_proj",
+  "device": "cpu",
+  "seed": 0,
+  "n_colloc": 4096,
+  "n_bc": 4096,
+  "batch_multiplier": 1,
+  "adam_lr": 0.005,
+  "adam_steps": 6000,
+  "lambda_bc": 50.0,
+  "weight_reg": 0.01,
+  "cosine": true,
+  "bottleneck_width": 128,
+  "fourier_sigma": 2.0,
+  "n_qubits": 11,
+  "n_states": 2048,
+  "total_weights": 1379
+}
