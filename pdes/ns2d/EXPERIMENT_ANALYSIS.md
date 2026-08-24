@@ -31,8 +31,8 @@ IC: \(u=v=p=0\) at \(t=0\) (hard IC: field \(= t \cdot \mathrm{network}\)).
 
 | Tier | Goal | Scripts / runs |
 |------|------|----------------|
-| **0** | First NS quantum run (Burgers run_0072 settings) | `train_ns.py` → `ns_run_0001` |
-| **0b** | Hyperparameter sweep (λ\_bc, bottleneck, Fourier σ, w\_reg) | `ns_sweep_8x.py` → `ns_sweep_*` |
+| **0** | First NS quantum run (Burgers run_0072 settings) | `archive/scripts/train_ns.py` → `ns_run_0001` |
+| **0b** | Hyperparameter sweep (λ\_bc, bottleneck, Fourier σ, w\_reg) | `archive/scripts/ns_sweep_8x.py` → `ns_sweep_*` |
 | **A** | Fix physics & target network before any QC claim | `train_ns_direct.py` → `ns_direct_a3/a4`, `a3_nu0p1_T5` |
 | **B v1** | Well-posed family test: \(\nu \mapsto \theta(\nu)\) | `train_ns_parametric.py` → `ns_par_c_s0`, `ns_par_q_s0` |
 | **B v2** | Redesign QC: log-\(\nu\) + Z expectations | `train_ns_parametric.py --qc-arch expect` → `ns_par_c_v2_s0`, `ns_par_q_v2_s0` |
@@ -361,7 +361,8 @@ See also `pdes/kolmogorov2d/README.md`.
 | `pdes/ns2d/physics_loss.py` | TGV residual, IC, exact solution, gauge-fixed metrics |
 | `src/qt_pinn/fourier.py` | `FourierFeatureMapTGV` (spatial + time) |
 | `src/qt_pinn/pinn_target_ns.py` | Target MLP \((x,y,t)\to(u,v,p)\) |
-| `src/qt_pinn/qnn_generator_ns.py` | Legacy constant-input QG (Tier 0) |
+| `src/qt_pinn/qnn_generator_ns.py` | Legacy constant-input QG (library) |
+| `archive/scripts/train_ns.py` | Legacy constant-input trainer (Tier 0) |
 | `src/qt_pinn/qnn_generator_cond.py` | v1 `reupload`, v2 `expect` conditioned generators |
 | `scripts/train_ns_direct.py` | Tier A direct baseline |
 | `scripts/train_ns_parametric.py` | Tier B TGV family training |
@@ -375,11 +376,9 @@ See also `pdes/kolmogorov2d/README.md`.
 
 ## Recommended next steps
 
-1. **Archive TGV + Kolmogorov hypernetwork QC** — null result is established across easy (TGV) and hard (Kolmogorov) PDEs.
-2. **If continuing quantum PINNs:** change the research question — e.g. input-conditioned circuits at \((x,y,t)\), or QC as optimizer (QNG/VQE on weights), not \(\nu \to\) flat weight vector.
-3. **If continuing classical PINNs only:** v1 TGV classical (`ns_par_c_s0`) remains best extrapolator; Kolmogorov direct (`kol_direct_s0`) is the field-network reference.
-4. **Optional:** tighten Kolmogorov extrap-hi grid or add spectral-DNS reference for qualitative validation.
-5. **Do not** compare constant-input quantum generators — invalid experiment (Tier 0).
+1. **Demo path:** `docs/PLAN_TGV_DEMO.md` — visual-quality TGV models + 3-panel animation (not another 60 h VQC-PINN).
+2. **Archive TGV + Kolmogorov hypernetwork QC as a scientific null** — established across easy (TGV) and hard (Kolmogorov) PDEs.
+3. **If continuing quantum PINNs scientifically:** change the question (input-conditioned spatial QC, sample efficiency) rather than lengthen ν → weight-vector training.
 
 ---
 

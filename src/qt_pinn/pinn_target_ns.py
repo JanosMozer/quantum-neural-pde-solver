@@ -32,9 +32,11 @@ class TargetPINNNS(nn.Module):
         hidden: tuple[int, int] = (H1_DEFAULT, H2_DEFAULT),
         t_max: float = 1.0,
         n_force: int = 4,
+        ic_fn=None,
     ) -> None:
         super().__init__()
         self.hard_ic = hard_ic
+        self.ic_fn = ic_fn
         self.h1, self.h2 = hidden
         self.fourier_mode = fourier
         if fourier == "tgv":
@@ -101,6 +103,10 @@ class TargetPINNNS(nn.Module):
         raw = self._raw(x, y, t, weights)
         if not self.hard_ic:
             return raw
+        if self.ic_fn is not None:
+            u0, v0, p0 = self.ic_fn(x, y)
+            ic = torch.stack([u0, v0, p0], dim=-1)
+            return ic + t.unsqueeze(-1) * raw
         if self.fourier_mode == "kol":
             return t.unsqueeze(-1) * raw
         u0 = torch.sin(x) * torch.cos(y)

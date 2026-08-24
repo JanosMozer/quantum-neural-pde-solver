@@ -28,6 +28,32 @@ class FourierFeatureMap(nn.Module):
                           torch.cos(2 * torch.pi * proj)], dim=-1)  # (batch, 6)
 
 
+class FourierFeatureMapWide(nn.Module):
+    """Wide random Fourier features for non-TGV fields (e.g. vortex merger)."""
+
+    def __init__(
+        self,
+        n_freqs: int = 32,
+        sigma: float = 1.0,
+        t_max: float = 40.0,
+        seed: int = 0,
+    ) -> None:
+        super().__init__()
+        self.t_max = float(t_max)
+        g = torch.Generator().manual_seed(seed)
+        B = torch.randn(3, n_freqs, generator=g) * sigma
+        B[2, :] *= 1.0 / max(self.t_max, 1e-6)
+        self.register_buffer("B", B)
+
+    @property
+    def out_dim(self) -> int:
+        return 2 * self.B.shape[1]
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        proj = x @ self.B
+        return torch.cat([torch.sin(2 * math.pi * proj), torch.cos(2 * math.pi * proj)], dim=-1)
+
+
 class FourierFeatureMapTGV(nn.Module):
     """Deterministic spatial Fourier basis + explicit time channel.
 

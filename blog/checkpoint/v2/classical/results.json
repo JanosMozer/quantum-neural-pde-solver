@@ -1,0 +1,35 @@
+{
+  "run_id": "blog/checkpoint/classical",
+  "model": "classical",
+  "preset": "polish",
+  "blog_tag": "polish",
+  "n_train_params": 5059,
+  "n_deployed_params": 5059,
+  "vel_rel_l2_max": 0.006098,
+  "gate_pass": true,
+  "ms_per_frame_256sq": 0.1785,
+  "exact_l2": {
+    "0T": {
+      "t": 0.0,
+      "u": 0.0,
+      "v": 0.0,
+      "p": 7.876516430283418e-09,
+      "vel": 0.0
+    },
+    "0.5T": {
+      "t": 2.5,
+      "u": 0.0023621989151180133,
+      "v": 0.002537660770810187,
+      "p": 0.00868040005018707,
+      "vel": 0.0024499298429641004
+    },
+    "1T": {
+      "t": 5.0,
+      "u": 0.006477978519051336,
+      "v": 0.005717772456337823,
+      "p": 0.029779671467715554,
+      "vel": 0.00609787548769458
+    }
+  },
+  "reproduce": ".venv/bin/python scripts/train_tgv_demo.py --model classical --preset polish --config configs/tgv_demo/polish.yaml --seed 0 --run-id tgv_polish_c --overwrite"
+}

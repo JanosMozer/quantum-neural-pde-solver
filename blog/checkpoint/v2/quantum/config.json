@@ -1,0 +1,41 @@
+{
+  "run_id": "tgv_polish_q",
+  "n_train_params": 98731,
+  "n_deployed_params": 1507,
+  "adam_steps": 20000,
+  "n_colloc": 8192,
+  "n_bc": 1024,
+  "classical_hidden": [
+    64,
+    64
+  ],
+  "qt_hidden": [
+    32,
+    32
+  ],
+  "n_qubits": 8,
+  "n_layers": 8,
+  "bottleneck_width": 64,
+  "lambda_data": 10.0,
+  "lambda_pde": 1.0,
+  "lambda_bc": 0.0,
+  "lr": 0.002,
+  "log_every": 500,
+  "eval_every": 1000,
+  "resample_every": 200,
+  "budget_s": 7200,
+  "qc_arch": "expect",
+  "t_weight": true,
+  "t_sample": "tail",
+  "preset": "polish",
+  "hard_ic": true,
+  "nu": 0.1,
+  "t_max": 5.0,
+  "loss_mode": "both",
+  "model": "quantum",
+  "device": "auto",
+  "overwrite": true,
+  "seed": 0,
+  "blog_tag": "polish",
+  "source_run": "checkpoints/tgv_polish_q"
+}

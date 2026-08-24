@@ -1,0 +1,36 @@
+{
+  "run_id": "blog/checkpoint/quantum",
+  "model": "quantum",
+  "preset": "demo",
+  "blog_tag": "v1_gate_pass",
+  "n_train_params": 61763,
+  "n_deployed_params": 939,
+  "vel_rel_l2_max": 0.013584,
+  "gate_pass": true,
+  "ms_per_frame_256sq": 0.1316,
+  "exact_l2": {
+    "0T": {
+      "t": 0.0,
+      "u": 0.0,
+      "v": 0.0,
+      "p": 7.876516430283418e-09,
+      "vel": 0.0
+    },
+    "0.5T": {
+      "t": 2.5,
+      "u": 0.0036656651911512487,
+      "v": 0.0048773468273215275,
+      "p": 0.015992015496157953,
+      "vel": 0.004271506009236388
+    },
+    "1T": {
+      "t": 5.0,
+      "u": 0.012337941554185728,
+      "v": 0.014829348518162073,
+      "p": 0.08829136639336459,
+      "vel": 0.0135836450361739
+    }
+  },
+  "evaluated_from": "generator.pt \u2192 deployed_weights.pt",
+  "reproduce": ".venv/bin/python scripts/train_tgv_demo.py --model quantum --preset demo --seed 0 --overwrite --run-id tgv_demo_q"
+}

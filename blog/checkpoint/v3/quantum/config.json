@@ -1,0 +1,28 @@
+{
+  "model": "quantum",
+  "nu": 0.005,
+  "t_max": 40.0,
+  "classical_hidden": [
+    128,
+    128
+  ],
+  "qt_hidden": [
+    32,
+    32
+  ],
+  "n_freqs": 48,
+  "n_qubits": 8,
+  "n_layers": 8,
+  "bottleneck_width": 64,
+  "adam_steps": 15000,
+  "n_colloc": 8192,
+  "lambda_data": 80.0,
+  "lambda_pde": 0.0,
+  "lambda_ic": 30.0,
+  "lr": 0.003,
+  "t_sample": "tail",
+  "hard_ic": false,
+  "n_deployed_params": 1507,
+  "n_train_params": 98731,
+  "dns": "blog/checkpoint/v3/dns/reference.pt"
+}

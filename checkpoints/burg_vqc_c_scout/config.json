@@ -1,0 +1,22 @@
+{
+  "model": "classical",
+  "preset": "scout",
+  "device": "cuda",
+  "adam_steps": 400,
+  "log_every": 25,
+  "lr": 0.005,
+  "seed": 0,
+  "n_colloc": 512,
+  "n_bc": 512,
+  "n_holdout": 256,
+  "n_holdout_bc": 256,
+  "lambda_bc": 10.0,
+  "hard_ic": true,
+  "nu": 0.003183,
+  "resample_every": 50,
+  "n_qubits": 6,
+  "n_layers": 4,
+  "run_id": "burg_vqc_c_scout",
+  "n_params": 98,
+  "vqc_reference_params": 92
+}

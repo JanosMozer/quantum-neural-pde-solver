@@ -1,0 +1,36 @@
+{
+  "run_id": "blog/checkpoint/classical",
+  "model": "classical",
+  "preset": "demo",
+  "blog_tag": "v1_gate_pass",
+  "n_train_params": 5059,
+  "n_deployed_params": 5059,
+  "vel_rel_l2_max": 0.0095,
+  "gate_pass": true,
+  "ms_per_frame_256sq": 0.1551,
+  "exact_l2": {
+    "0T": {
+      "t": 0.0,
+      "u": 0.0,
+      "v": 0.0,
+      "p": 7.876516430283418e-09,
+      "vel": 0.0
+    },
+    "0.5T": {
+      "t": 2.5,
+      "u": 0.002561226529164109,
+      "v": 0.0027582205206172507,
+      "p": 0.010642571224450802,
+      "vel": 0.0026597235248906797
+    },
+    "1T": {
+      "t": 5.0,
+      "u": 0.010002649386424053,
+      "v": 0.008997690926909059,
+      "p": 0.04190348204683724,
+      "vel": 0.009500170156666557
+    }
+  },
+  "evaluated_from": "model.pt (best mid-run save)",
+  "reproduce": ".venv/bin/python scripts/train_tgv_demo.py --model classical --preset demo --seed 0 --overwrite --run-id tgv_demo_c"
+}

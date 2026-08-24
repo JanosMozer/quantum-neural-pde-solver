@@ -1,0 +1,14 @@
+# Scout sweep: classical [64,64] vs quantum [16,16] (8q×4L)
+# t_weight=True fixes late-time decay accuracy.
+# Quantum: 499 deployed params vs 5,059 classical → ~10× fewer weights
+#
+# Usage: .venv/bin/python scripts/sweep_tgv.py --config configs/tgv_demo/sweep_scout.yaml
+preset: scout
+model: [classical, quantum]
+grid:
+  lambda_data: [3.0, 10.0]
+  lr: [0.003, 0.005]
+extra:
+  overwrite: true
+  loss_mode: both
+  t_weight: true

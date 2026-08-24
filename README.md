@@ -1,14 +1,11 @@
-# Quantum Neural Solvers for PDEs
+# qt-pinn
 
-A Quantum-Train-style weight generator (a parameterized quantum circuit generates
-the weights of a classical physics-informed neural network solving the 2D Burgers'
-equation, then the circuit is discarded and only the classical weights are deployed),
-classified against known classical-simulability criteria, and ablated against two
-classical weight generators at matched parameter count.
+Physics-informed neural nets with variational quantum circuits as **weight generators** (Quantum-Train: circuit produces MLP weights, then the circuit is discarded) and as **input-conditioned** field models.
 
-Full research writeup, citations, and the implementation plan: `research/qt_pde_ablation_prop.pdf`
-and `research/qt_pde_ablation_implementation_plan.pdf`. This README is just the practical
-"how to run things" reference.
+Primary demo target: 2D Taylor–Green Navier–Stokes, classical vs quantum, 3-panel animation.  
+Plan: [`docs/PLAN_TGV_DEMO.md`](docs/PLAN_TGV_DEMO.md).  
+NS measurement log: [`pdes/ns2d/EXPERIMENT_ANALYSIS.md`](pdes/ns2d/EXPERIMENT_ANALYSIS.md).  
+Blog outline: [`blog/blog.md`](blog/blog.md).
 
 ## Setup
 
@@ -17,47 +14,47 @@ uv venv --python 3.12.12 .venv
 uv pip install --python .venv/bin/python -e .
 ```
 
-No GPU required at the qubit counts this project currently uses; `pennylane`'s CPU
-`default.qubit` device is enough. If qubit count ever grows past what's comfortable on CPU,
-`pennylane-lightning[gpu]` is already a listed dependency.
+PennyLane `default.qubit` (CPU) is the simulator in use. Circuit training is much slower than a small GPU MLP; animations must use **deployed classical MLPs**, not per-pixel VQCs.
 
-## Running things
+## Live commands
 
-All commands run from the repo root.
+From repo root. Full list: [`scripts/README.md`](scripts/README.md).
 
 ```bash
-# train the QT-PINN (2-stage Adam -> L-BFGS), saves to checkpoints/run_NNNN/
-.venv/bin/python scripts/train.py
+# Classical TGV PINN (direct)
+.venv/bin/python scripts/train_ns_direct.py --adam-steps 6000
 
-# export the trained quantum generator's static classical weights (drops the quantum dependency)
+# Quantum vs classical hypernetwork (ν → MLP weights)
+.venv/bin/python scripts/train_ns_parametric.py --generator classical --seed 0 --run-id ns_par_c_s0
+.venv/bin/python scripts/train_ns_parametric.py --generator quantum   --seed 0 --run-id ns_par_q_s0
+.venv/bin/python scripts/compare_ns_parametric.py checkpoints/ns_par_c_s0 checkpoints/ns_par_q_s0
+
+# Original Burgers Quantum-Train
+.venv/bin/python scripts/train_gpu.py
 .venv/bin/python scripts/export_weights.py --run latest
-
-# pure-classical inference + a solution plot, using the exported static weights
 .venv/bin/python scripts/inference.py --run latest
-
-# classify a circuit's entanglement structure (Schmidt rank / entropy at every cut)
-.venv/bin/python scripts/classify_circuit.py
 ```
 
 ## Tests
 
-Plain assert-based self-tests, no framework, run directly:
-
 ```bash
-.venv/bin/python tests/verify_env.py          # environment/dependency sanity check
-.venv/bin/python tests/test_classification.py # analytic ground truth (product state, GHZ state)
-.venv/bin/python tests/test_quimb_autograd.py # quimb MPS -> torch gradient smoke test
-.venv/bin/python tests/test_baselines.py      # both classical baseline generators
+.venv/bin/python tests/verify_env.py
+.venv/bin/python tests/test_classification.py
+.venv/bin/python tests/test_quimb_autograd.py
+.venv/bin/python tests/test_baselines.py
 ```
 
 ## Layout
 
 ```
-pdes/burgers2d/        the PDE: physics residual (physics_loss.py) + config.yaml (circuit/training hyperparameters)
-src/qt_pinn/           the library: circuit, PINN, classification, classical baselines
-scripts/               entry points: train, export, inference, classify
-tests/                 self-tests for the library code
-experiments/           self-contained one-off studies (currently: the RFF dequantization warm-up)
-checkpoints/           trained runs (be deliberate about committing new ones, see .gitignore)
-research/              the two LaTeX writeups + PDFs, verified paper source notes, hypotheses, dated logs
+pdes/burgers2d/     Burgers residual + config
+pdes/ns2d/          Taylor–Green NS + experiment log
+pdes/kolmogorov2d/  Forced NS
+src/qt_pinn/        Circuits, PINN targets, Fourier maps, generators
+scripts/            Live entry points
+archive/            Dead sweeps, broken NS trainer, Burgers one-offs
+checkpoints/        Runs (see checkpoints/README.md)
+docs/               Demo plan
+blog/               Article outline
+tests/
 ```

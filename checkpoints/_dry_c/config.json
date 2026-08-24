@@ -1,0 +1,38 @@
+{
+  "run_id": "_dry_c",
+  "n_train_params": 5059,
+  "n_deployed_params": 5059,
+  "adam_steps": 5,
+  "n_colloc": 2048,
+  "n_bc": 512,
+  "classical_hidden": [
+    64,
+    64
+  ],
+  "qt_hidden": [
+    16,
+    16
+  ],
+  "n_qubits": 8,
+  "n_layers": 4,
+  "bottleneck_width": 64,
+  "lambda_data": 5.0,
+  "lambda_pde": 1.0,
+  "lambda_bc": 0.0,
+  "lr": 0.005,
+  "log_every": 1,
+  "eval_every": 5,
+  "resample_every": 100,
+  "budget_s": 900,
+  "qc_arch": "expect",
+  "t_weight": true,
+  "model": "classical",
+  "device": "auto",
+  "overwrite": true,
+  "seed": 0,
+  "nu": 0.1,
+  "t_max": 5.0,
+  "hard_ic": true,
+  "loss_mode": "both",
+  "preset": "scout"
+}

@@ -1,0 +1,32 @@
+{
+  "run_id": "tgv_sw_c_scout_lambda_data1p0",
+  "n_params": 1507,
+  "adam_steps": 1500,
+  "n_colloc": 1024,
+  "n_bc": 512,
+  "hidden": [
+    32,
+    32
+  ],
+  "n_qubits": 4,
+  "n_layers": 3,
+  "bottleneck_width": 32,
+  "lambda_data": 1.0,
+  "lambda_bc": 10.0,
+  "lambda_pde": 1.0,
+  "lr": 0.005,
+  "log_every": 100,
+  "eval_every": 300,
+  "resample_every": 50,
+  "budget_s": 600.0,
+  "qc_arch": "expect",
+  "model": "classical",
+  "device": "auto",
+  "overwrite": true,
+  "seed": 0,
+  "nu": 0.1,
+  "t_max": 5.0,
+  "hard_ic": true,
+  "loss_mode": "data",
+  "preset": "scout"
+}

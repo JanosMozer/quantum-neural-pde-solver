@@ -1,0 +1,35 @@
+{
+  "run_id": "blog/checkpoint/quantum",
+  "model": "quantum",
+  "preset": "polish",
+  "blog_tag": "polish",
+  "n_train_params": 98731,
+  "n_deployed_params": 1507,
+  "vel_rel_l2_max": 0.006241,
+  "gate_pass": true,
+  "ms_per_frame_256sq": 0.1341,
+  "exact_l2": {
+    "0T": {
+      "t": 0.0,
+      "u": 0.0,
+      "v": 0.0,
+      "p": 7.876516430283418e-09,
+      "vel": 0.0
+    },
+    "0.5T": {
+      "t": 2.5,
+      "u": 0.003165799452476126,
+      "v": 0.0028059603580724113,
+      "p": 0.008921918644609653,
+      "vel": 0.0029858799052742686
+    },
+    "1T": {
+      "t": 5.0,
+      "u": 0.006999735365118357,
+      "v": 0.005481926672105215,
+      "p": 0.032033688684482337,
+      "vel": 0.006240831018611786
+    }
+  },
+  "reproduce": ".venv/bin/python scripts/train_tgv_demo.py --model quantum --preset polish --config configs/tgv_demo/polish.yaml --seed 0 --run-id tgv_polish_q --overwrite"
+}

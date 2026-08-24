@@ -10,7 +10,7 @@ the first floor(Q/2) qubits) is NOT duplicated here: qt_pinn.classification alre
 computes this (entanglement_entropies), used by scripts/classify_circuit.py.
 
 DLA dimension is only computed for small n (verified methodology in
-experiments/dla/compute_dla.py); at n=9 it is intractable to compute directly, so
+archive/experiments/dla/compute_dla.py); at n=9 it is intractable to compute directly, so
 `dla_dimension` raises rather than hang, and callers should use the verified
 extrapolation (4^n - 1 for this circuit family) documented in
 research/logs/2026-07-31-scaling-laws-plan.md instead.
@@ -35,7 +35,7 @@ def cnot_ring_unitary(n: int) -> np.ndarray:
 
 
 def dla_dimension(n_qubits: int, rounds: int = 2, max_n: int = 6) -> int:
-    """Full-rank-verified methodology from experiments/dla/compute_dla.py. Only
+    """Full-rank-verified methodology from archive/experiments/dla/compute_dla.py. Only
     tractable for small n; raises above max_n rather than hang.
     """
     if n_qubits > max_n:

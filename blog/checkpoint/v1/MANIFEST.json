@@ -1,0 +1,49 @@
+{
+  "created_utc": "2026-08-24T15:43:12.197337+00:00",
+  "git_sha": "feb899969518f2be761177965c1e821f1b66db49",
+  "git_dirty": true,
+  "physics": {
+    "pde": "2D incompressible Navier\u2013Stokes (Taylor\u2013Green vortex)",
+    "nu": 0.1,
+    "t_max": 5.0,
+    "domain": "[0, 2\u03c0]\u00b2",
+    "hard_ic": true,
+    "exact": {
+      "u": "sin(x) cos(y) exp(-2 \u03bd t)",
+      "v": "-cos(x) sin(y) exp(-2 \u03bd t)",
+      "p": "0.25 (cos(2x)+cos(2y)) exp(-4 \u03bd t)"
+    }
+  },
+  "story": {
+    "claim": "QT deploys a smaller MLP with similar accuracy and faster/cheaper inference",
+    "classical_deployed_params": 5059,
+    "quantum_deployed_params": 939,
+    "param_ratio": 5.39
+  },
+  "runs": {
+    "classical": {
+      "path": "blog/checkpoint/classical",
+      "files": {
+        "model.pt": "461bfc9fc5e6a4e3c788b604ab52997d75a2f5b2aed0db5b6c147a7f859ae2dd",
+        "config.json": "3378b27e357b48ceb3d502dd3ba6c3cccb2f407b0d4799f343b4b77816c94018",
+        "results.json": "a2d6d2f16b2ab00d78ae45d569f576c3d561154fbab435c039299c14ee3cbb3d"
+      },
+      "vel_rel_l2_max": 0.0095,
+      "gate_pass": true,
+      "ms_per_frame_256sq": 0.1551
+    },
+    "quantum": {
+      "path": "blog/checkpoint/quantum",
+      "files": {
+        "generator.pt": "f49ae6c231f6acaeb3d5de09c77bef897ac45f5e4410815dae31ef727862e2af",
+        "deployed_weights.pt": "56aa92d6b49eca8c0e1c2fc1c98fb35f31699c42b076f7ef1a83b2f1dcdbe46a",
+        "config.json": "1d58c34095a8d62d390b194c630667a92e984bbe2f3388f81d6fe80c628f2a80",
+        "results.json": "fb1d038358790ebdaaf45d121c70edf85e2b2fc85ea1fd82edbfb2e74c77258e"
+      },
+      "vel_rel_l2_max": 0.013584,
+      "gate_pass": true,
+      "ms_per_frame_256sq": 0.1316
+    }
+  },
+  "eval": ".venv/bin/python scripts/eval_tgv_grid.py blog/checkpoint/classical && .venv/bin/python scripts/eval_tgv_grid.py blog/checkpoint/quantum"
+}

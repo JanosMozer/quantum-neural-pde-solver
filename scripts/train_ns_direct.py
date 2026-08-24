@@ -30,6 +30,7 @@ import torch
 import torch.nn as nn
 
 from qt_pinn.fourier import FourierFeatureMap, FourierFeatureMapTGV
+from qt_pinn.tgv_demo import data_loss
 from pdes.ns2d.physics_loss import exact_solution, _grad, relative_l2_gauge
 
 X_LO, X_HI = 0.0, 2.0 * math.pi
@@ -177,6 +178,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--fourier-sigma", type=float, default=0.25)
     p.add_argument("--hard-ic", action="store_true",
                    help="A4: hard IC ansatz u=u_IC + t*N")
+    p.add_argument("--lambda-data", type=float, default=0.0,
+                   help="MSE to exact TGV (visual quality; 0 = PINN-only)")
+    p.add_argument("--overwrite", action="store_true")
     p.add_argument("--run-id", type=str, default="")
     p.add_argument("--hidden", type=int, nargs=2, default=[32, 32])
     p.add_argument("--nu", type=float, default=0.1,
@@ -202,10 +206,7 @@ def next_run_dir(tag: str) -> tuple[str, Path]:
     base = Path("checkpoints")
     base.mkdir(exist_ok=True)
     if tag:
-        d = base / tag
-        if d.exists():
-            raise FileExistsError(f"exists: {d}")
-        return tag, d
+        return tag, base / tag
     existing = sorted(base.glob("ns_direct_*"))
     n = int(existing[-1].name.split("_")[-1]) + 1 if existing else 1
     run_id = f"ns_direct_{n:04d}"
@@ -219,6 +220,11 @@ def main() -> None:
     np.random.seed(args.seed)
 
     run_id, run_dir = next_run_dir(args.run_id)
+    if run_dir.exists():
+        if not args.overwrite:
+            raise FileExistsError(f"exists: {run_dir}  (pass --overwrite)")
+        import shutil
+        shutil.rmtree(run_dir)
     run_dir.mkdir(parents=True)
 
     model = DirectNSMLP(
@@ -251,7 +257,9 @@ def main() -> None:
             x_bc, y_bc, t_bc = make_bc(args.n_bc, device)
         opt.zero_grad()
         pde, bc = compute_ns_loss_direct(model, x, y, t, x_bc, y_bc, t_bc, args.nu)
-        loss = pde if args.hard_ic else (pde + args.lambda_bc * bc)
+        uvp = model(x, y, t)
+        dat = data_loss(uvp, x, y, t, args.nu) if args.lambda_data else 0.0
+        loss = (pde if args.hard_ic else (pde + args.lambda_bc * bc)) + args.lambda_data * dat
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step()

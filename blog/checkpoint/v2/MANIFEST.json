@@ -1,0 +1,55 @@
+{
+  "created_utc": "2026-08-24T16:09:34.119177+00:00",
+  "tag": "v2_tgv_polish",
+  "previous": "blog/checkpoint/v1",
+  "git_sha": "feb899969518f2be761177965c1e821f1b66db49",
+  "git_dirty": true,
+  "physics": {
+    "pde": "2D incompressible Navier\u2013Stokes (Taylor\u2013Green vortex)",
+    "nu": 0.1,
+    "t_max": 5.0,
+    "domain": "[0, 2\u03c0]\u00b2",
+    "hard_ic": true,
+    "exact": {
+      "u": "sin(x) cos(y) exp(-2 \u03bd t)",
+      "v": "-cos(x) sin(y) exp(-2 \u03bd t)",
+      "p": "0.25 (cos(2x)+cos(2y)) exp(-4 \u03bd t)"
+    }
+  },
+  "story": {
+    "claim": "QT deploys a smaller MLP with similar accuracy and faster inference",
+    "classical_deployed_params": 5059,
+    "quantum_deployed_params": 1507,
+    "param_ratio": 3.36,
+    "inference_speedup": 1.33
+  },
+  "runs": {
+    "classical": {
+      "path": "blog/checkpoint/classical",
+      "vel_rel_l2_max": 0.006098,
+      "gate_pass": true,
+      "ms_per_frame_256sq": 0.1785,
+      "files": {
+        "model.pt": "1a9386e494cac16e42cc2f77ac3e5c6d40061be77d13ec4535bbe5e5094353ee",
+        "config.json": "380b86e9d2ea5a93c3e1762fb1855468d8b42f70252cbb38748f68cc6c953e4d",
+        "results.json": "3c09b6075e50c7945de5d2f47efc4beb967db05d1c71e3345772bdbbfd4365ce"
+      }
+    },
+    "quantum": {
+      "path": "blog/checkpoint/quantum",
+      "vel_rel_l2_max": 0.006241,
+      "gate_pass": true,
+      "ms_per_frame_256sq": 0.1341,
+      "files": {
+        "generator.pt": "2e70dfff15ef8006d5effa3090e5dd3255c887b11eedc1cf71f80044da825725",
+        "deployed_weights.pt": "1e8c56cf67e6d78bfcf529a0bc4c6e48c2e21bd094fa32d2c6834ffcb9a253de",
+        "config.json": "fe257f255e576c957eb14d28f03758820af322d770d7c58a364ffd4655532a67",
+        "results.json": "793286d1dcd31d5a8d9edbe0a5dc58161a04afaace0b6744ea2adeed1234ab2d"
+      }
+    }
+  },
+  "eval": ".venv/bin/python scripts/eval_tgv_grid.py blog/checkpoint/classical && .venv/bin/python scripts/eval_tgv_grid.py blog/checkpoint/quantum",
+  "path": "blog/checkpoint/v2",
+  "media": "blog/checkpoint/v2/media",
+  "reorganized_utc": "2026-08-24T16:40:24.725868+00:00"
+}
