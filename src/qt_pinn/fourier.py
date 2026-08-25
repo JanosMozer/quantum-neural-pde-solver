@@ -103,6 +103,65 @@ class FourierFeatureMapTGV(nn.Module):
         return torch.cat([spatial, time_feats], dim=-1)
 
 
+class FourierFeatureMapHarmonic(nn.Module):
+    """Deterministic harmonics k=1..k_max in x and y, plus a few mixed modes.
+
+    Structured (not random RFF) so a small QT-generated MLP can fit vortex
+    merger filaments that TGV's k≤2 basis cannot represent.
+    """
+
+    def __init__(self, k_max: int = 6, t_max: float = 40.0, n_time_feats: int = 2,
+                 axis_extra: int = 0) -> None:
+        super().__init__()
+        if n_time_feats not in (1, 2):
+            raise ValueError("n_time_feats must be 1 or 2")
+        self.n_time_feats = n_time_feats
+        self.t_max = float(t_max)
+        inv_2pi = 1.0 / (2.0 * math.pi)
+        pairs = []
+        seen = set()
+
+        def add(kx, ky):
+            key = (float(kx), float(ky))
+            if key not in seen:
+                seen.add(key)
+                pairs.append(key)
+
+        for k in range(1, k_max + 1):
+            add(k, 0.0)
+            add(0.0, k)
+        # original k≤6 mixed set (keeps E22 checkpoints loadable)
+        for kx, ky in ((1, 1), (2, 2), (1, 2), (2, 1), (3, 1), (1, 3)):
+            add(kx, ky)
+        if k_max > 6:
+            mix_cap = min(k_max, 8)
+            for kx in range(1, mix_cap + 1):
+                for ky in range(1, mix_cap + 1):
+                    if kx + ky <= k_max + 2:
+                        add(kx, ky)
+        # extra axis-only modes (k_max+1 .. k_max+axis_extra); does not change mixed set
+        for k in range(k_max + 1, k_max + 1 + max(0, int(axis_extra))):
+            add(k, 0.0)
+            add(0.0, k)
+        B = torch.zeros(3, len(pairs), dtype=torch.float32)
+        for j, (kx, ky) in enumerate(pairs):
+            B[0, j] = kx * inv_2pi
+            B[1, j] = ky * inv_2pi
+        self.register_buffer("B", B)
+        self._n_spatial = 2 * len(pairs)
+
+    @property
+    def out_dim(self) -> int:
+        return self._n_spatial + self.n_time_feats
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        proj = x @ self.B
+        spatial = torch.cat([torch.sin(2 * math.pi * proj), torch.cos(2 * math.pi * proj)], dim=-1)
+        t_norm = x[:, 2:3] / self.t_max
+        time_feats = t_norm if self.n_time_feats == 1 else torch.cat([t_norm, t_norm ** 2], dim=-1)
+        return torch.cat([spatial, time_feats], dim=-1)
+
+
 class FourierFeatureMapKolmogorov(nn.Module):
     """Fourier basis tuned for Kolmogorov forcing f_x = A sin(n y).
 

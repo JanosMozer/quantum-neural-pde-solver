@@ -1,0 +1,19 @@
+{
+  "model": "quantum",
+  "arch": "qt_harm_uvp",
+  "qt_hidden": [
+    48,
+    48
+  ],
+  "qt_fourier": "harm",
+  "n_freqs": 3,
+  "n_qubits": 8,
+  "n_layers": 8,
+  "bottleneck_width": 64,
+  "t_max": 40.0,
+  "nu": 0.005,
+  "n_deployed_params": 3795,
+  "gate_metric": "fd_curl",
+  "exp": "qt_h48_k3",
+  "bench_n_pts": 262144
+}

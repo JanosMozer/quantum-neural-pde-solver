@@ -13,10 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
-import subprocess
 import sys
-import tempfile
 import time
 from pathlib import Path
 
@@ -210,7 +207,7 @@ def train_one(args, model_kind: str, dns: dict) -> Path:
         if args.budget_s and (time.time() - t0) > args.budget_s:
             print(f"budget stop at step {step}")
             break
-        x, y, t, tgt = sample_dns(dns_g, n_colloc, device, t_sample=args.t_sample)
+        x, y, t, tgt, _omega = sample_dns(dns_g, n_colloc, device, t_sample=args.t_sample)
         x = x.requires_grad_(True)
         y = y.requires_grad_(True)
         t = t.requires_grad_(True)
@@ -370,101 +367,14 @@ def make_plots(dns: dict, device: torch.device) -> None:
     plt.close(fig)
     print(f"Wrote {media/'merger_triplet_snapshots.png'}")
 
-    # gif with tracers
-    ffmpeg = subprocess.run(["which", "ffmpeg"], capture_output=True)
-    if ffmpeg.returncode != 0:
-        return
-    n_frames = min(60, len(dns["t"]))
-    frame_idx = np.linspace(0, len(dns["t"]) - 1, n_frames).astype(int)
-    # seed tracers near initial vortex centers
-    centers = dns["centers"]
-    rng = np.random.default_rng(0)
-    tracers = []
-    for cx, cy in centers:
-        th = np.linspace(0, 2 * math.pi, 16, endpoint=False)
-        for r in (0.25, 0.5, 0.8):
-            tracers.append(np.stack([cx + r * np.cos(th), cy + r * np.sin(th)], 1))
-    tracers = np.concatenate(tracers, 0)
-
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp = Path(tmp)
-        for fi, ti in enumerate(frame_idx):
-            tv = float(dns["t"][ti])
-            omega_ex = dns["omega"][ti].numpy()[::step, ::step]
-            xg, yg = np.meshgrid(xs_s, xs_s, indexing="ij")
-            xt = torch.tensor(xg.ravel(), device=device, dtype=torch.float32)
-            yt = torch.tensor(yg.ravel(), device=device, dtype=torch.float32)
-            tt = torch.full_like(xt, tv)
-            with torch.no_grad():
-                pc = pred_c(xt, yt, tt).cpu().numpy().reshape(*xg.shape, 3)
-                pq = pred_q(xt, yt, tt).cpu().numpy().reshape(*xg.shape, 3)
-            dx = TWO_PI / xg.shape[0]
-
-            def vort(u, v):
-                dvdx = (np.roll(v, -1, 0) - np.roll(v, 1, 0)) / (2 * dx)
-                dudy = (np.roll(u, -1, 1) - np.roll(u, 1, 1)) / (2 * dx)
-                return dvdx - dudy
-
-            panels = [
-                (omega_ex, dns["u"][ti].numpy()[::step, ::step], dns["v"][ti].numpy()[::step, ::step]),
-                (vort(pc[..., 0], pc[..., 1]), pc[..., 0], pc[..., 1]),
-                (vort(pq[..., 0], pq[..., 1]), pq[..., 0], pq[..., 1]),
-            ]
-            vmax = max(abs(omega_ex).max(), 1e-6)
-            fig, axes = plt.subplots(1, 3, figsize=(11, 3.6), constrained_layout=True)
-            for ax, (om, u, v), title in zip(
-                axes, panels, ["DNS", "Classical", "Quantum"]
-            ):
-                im = ax.pcolormesh(xs_s, xs_s, om.T, cmap="RdBu_r", shading="auto",
-                                   vmin=-vmax, vmax=vmax)
-                ax.streamplot(xs_s, xs_s, u.T, v.T, color="k", density=0.9,
-                              linewidth=0.5, arrowsize=0.5, broken_streamlines=False)
-                ax.scatter(tracers[:, 0], tracers[:, 1], s=6, c="yellow",
-                           edgecolors="k", linewidths=0.2, zorder=5)
-                ax.set_xlim(0, TWO_PI); ax.set_ylim(0, TWO_PI)
-                ax.set_aspect("equal"); ax.set_xticks([]); ax.set_yticks([])
-                ax.set_title(title)
-            # advect tracers with DNS velocity for next visual frame
-            if fi < len(frame_idx) - 1:
-                dt = float(dns["t"][frame_idx[fi + 1]] - dns["t"][ti])
-                u_full = dns["u"][ti].numpy()
-                v_full = dns["v"][ti].numpy()
-                xs_f = dns["x"].numpy()
-                # bilinear
-                n0 = len(xs_f)
-                fx = (tracers[:, 0] / TWO_PI) * n0
-                fy = (tracers[:, 1] / TWO_PI) * n0
-                i0 = np.floor(fx).astype(int) % n0
-                j0 = np.floor(fy).astype(int) % n0
-                i1 = (i0 + 1) % n0
-                j1 = (j0 + 1) % n0
-                tx = fx - np.floor(fx)
-                ty = fy - np.floor(fy)
-                uu = ((1 - tx) * (1 - ty) * u_full[i0, j0] + tx * (1 - ty) * u_full[i1, j0]
-                      + (1 - tx) * ty * u_full[i0, j1] + tx * ty * u_full[i1, j1])
-                vv = ((1 - tx) * (1 - ty) * v_full[i0, j0] + tx * (1 - ty) * v_full[i1, j0]
-                      + (1 - tx) * ty * v_full[i0, j1] + tx * ty * v_full[i1, j1])
-                tracers[:, 0] = (tracers[:, 0] + dt * uu) % TWO_PI
-                tracers[:, 1] = (tracers[:, 1] + dt * vv) % TWO_PI
-
-            fig.colorbar(im, ax=axes.tolist(), fraction=0.046, pad=0.02)
-            fig.suptitle(f"Vortex merger   t = {tv:.1f} / {float(dns['t_max']):.0f}")
-            fig.savefig(tmp / f"frame_{fi:04d}.png", dpi=110)
-            plt.close(fig)
-
-        out_gif = media / "merger_triplet.gif"
-        palette = tmp / "palette.png"
-        pattern = str(tmp / "frame_%04d.png")
-        subprocess.check_call(
-            ["ffmpeg", "-y", "-framerate", "12", "-i", pattern, "-vf", "palettegen", str(palette)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-        subprocess.check_call(
-            ["ffmpeg", "-y", "-framerate", "12", "-i", pattern, "-i", str(palette),
-             "-lavfi", "paletteuse", str(out_gif)],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-        print(f"Wrote {out_gif}")
+    # Gif via no-tracer campaign helper when checkpoints exist
+    try:
+        from scripts.exp_merger_omega_v2 import regenerate_media_flexible
+        regenerate_media_flexible(dns, device, "uvpw")
+        print(f"Wrote {media/'merger_triplet.gif'} (no tracers)")
+    except Exception as exc:
+        print(f"Skipping gif (need promoted v3 checkpoints): {exc}")
+    return
 
 
 def parse_args():

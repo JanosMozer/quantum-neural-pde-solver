@@ -203,25 +203,30 @@ def sample_dns(
     n_pts: int,
     device: torch.device,
     t_sample: str = "uniform",
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Random (x,y,t) samples with trilinear-ish lookup of (u,v,p) from DNS grids.
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Random (x,y,t) samples from DNS grids.
 
-    Returns x,y,t, target(N,3).
+    Returns x, y, t, target_uvp(N,3), omega(N,).
     """
     u_all = dns["u"].to(device)  # (T,N,N)
     v_all = dns["v"].to(device)
     p_all = dns["p"].to(device)
+    w_all = dns["omega"].to(device)
     ts = dns["t"].to(device)
     n = u_all.shape[-1]
     n_t = ts.numel()
-    t_max = float(dns["t_max"])
 
-    # sample indices
     ix = torch.randint(0, n, (n_pts,), device=device)
     iy = torch.randint(0, n, (n_pts,), device=device)
     if t_sample == "tail":
-        # bias toward later times (merger)
         it = (torch.rand(n_pts, device=device).sqrt() * (n_t - 1)).long()
+    elif t_sample == "early":
+        # bias to merger window [0, ~0.45 T]
+        it = (torch.rand(n_pts, device=device).pow(2) * (0.45 * (n_t - 1))).long()
+    elif t_sample == "merger":
+        # uniform over the visual/eval window t ∈ [0, 0.4 T] ≈ [0, 16]
+        hi = max(1, int(0.4 * (n_t - 1)))
+        it = torch.randint(0, hi + 1, (n_pts,), device=device)
     else:
         it = torch.randint(0, n_t, (n_pts,), device=device)
 
@@ -233,7 +238,8 @@ def sample_dns(
         v_all[it, ix, iy],
         p_all[it, ix, iy],
     ], dim=-1)
-    return x, y, t, tgt
+    omega = w_all[it, ix, iy]
+    return x, y, t, tgt, omega
 
 
 def ic_values_from_dns(dns: dict, x: torch.Tensor, y: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

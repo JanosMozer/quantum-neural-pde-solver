@@ -9,7 +9,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from qt_pinn.fourier import FourierFeatureMap, FourierFeatureMapTGV, FourierFeatureMapKolmogorov
+from qt_pinn.fourier import FourierFeatureMap, FourierFeatureMapTGV, FourierFeatureMapKolmogorov, FourierFeatureMapWide, FourierFeatureMapHarmonic
 
 # Default sizes for random-RFF path (must match qnn_generator_ns.py when used)
 H1_DEFAULT, H2_DEFAULT = 32, 32
@@ -33,6 +33,8 @@ class TargetPINNNS(nn.Module):
         t_max: float = 1.0,
         n_force: int = 4,
         ic_fn=None,
+        n_freqs: int = 32,
+        fourier_sigma_wide: float = 1.2,
     ) -> None:
         super().__init__()
         self.hard_ic = hard_ic
@@ -48,6 +50,15 @@ class TargetPINNNS(nn.Module):
         elif fourier == "random":
             self.fourier = FourierFeatureMap(sigma=fourier_sigma, seed=fourier_seed)
             self.in_dim = 6
+        elif fourier == "harm":
+            k_max = n_freqs if n_freqs >= 2 else 6
+            self.fourier = FourierFeatureMapHarmonic(k_max=k_max, t_max=t_max)
+            self.in_dim = self.fourier.out_dim
+        elif fourier == "wide":
+            self.fourier = FourierFeatureMapWide(
+                n_freqs=n_freqs, sigma=fourier_sigma_wide, t_max=t_max, seed=fourier_seed,
+            )
+            self.in_dim = self.fourier.out_dim
         else:
             raise ValueError(f"unknown fourier={fourier!r}")
 

@@ -5,7 +5,6 @@
     96
   ],
   "k_max": 6,
-  "axis_extra": 0,
   "t_max": 40.0,
   "nu": 0.005,
   "n_deployed_params": 13347,
