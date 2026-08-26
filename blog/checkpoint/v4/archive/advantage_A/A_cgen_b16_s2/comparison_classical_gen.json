@@ -1,0 +1,18 @@
+{
+  "steps": 20000,
+  "seed": 2,
+  "nu": 0.005,
+  "n_qubits": 8,
+  "n_layers": 8,
+  "bottleneck": 16,
+  "teacher": true,
+  "omega_gate": 0.02,
+  "arm": "classical_gen",
+  "classical_gen": {
+    "omega_max": 0.021381553508174167,
+    "vel_max": 0.035851423624623006,
+    "latency_ms": 0.6330407643690705,
+    "throughput_pts_s": 414102874.1826282,
+    "n_deployed_params": 3795
+  }
+}

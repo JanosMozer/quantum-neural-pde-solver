@@ -1,0 +1,22 @@
+=== dense multi-vortex k=2 ===
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v5/media/tgv_dense_t0.png
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v5/media/tgv_dense_snapshots.png
+  [k=2] frame 1/151 t=0.0
+  [k=2] frame 26/151 t=2.5
+  [k=2] frame 51/151 t=5.0
+  [k=2] frame 76/151 t=7.5
+  [k=2] frame 101/151 t=10.0
+  [k=2] frame 126/151 t=12.5
+  [k=2] frame 151/151 t=15.0
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v5/media/tgv_dense.gif  (151 frames @ 10 fps)
+=== Exact | Classical | Quantum (k=1) ===
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v5/media/tgv_triplet_t0.png
+  [triplet] frame 1/151 t=0.0
+  [triplet] frame 26/151 t=2.5
+  [triplet] frame 51/151 t=5.0
+  [triplet] frame 76/151 t=7.5
+  [triplet] frame 101/151 t=10.0
+  [triplet] frame 126/151 t=12.5
+  [triplet] frame 151/151 t=15.0
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v5/media/tgv_triplet.gif  (151 frames @ 10 fps)
+Done.

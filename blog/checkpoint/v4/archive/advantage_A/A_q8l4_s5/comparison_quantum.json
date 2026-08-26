@@ -1,0 +1,29 @@
+{
+  "steps": 20000,
+  "seed": 5,
+  "nu": 0.005,
+  "n_qubits": 8,
+  "n_layers": 4,
+  "bottleneck": 64,
+  "lr": 0.001,
+  "circuit_lr_scale": 1.0,
+  "curl_scale": 1.0,
+  "teacher": true,
+  "omega_gate": 0.02,
+  "arm": "quantum",
+  "quantum": {
+    "omega_max": 0.02518913605508911,
+    "vel_max": 0.02981436064900679,
+    "latency_ms": 0.47933522146195173,
+    "throughput_pts_s": 546890752.5728489,
+    "n_deployed_params": 3795
+  },
+  "circuit_ablation": {
+    "omega_full": 0.02518913605508911,
+    "omega_random_q": 0.4229942305881598,
+    "omega_zero_feats": 0.5372542817683741,
+    "delta_random_q": 0.3978050945330707,
+    "delta_zero_feats": 0.512065145713285,
+    "circuit_used": true
+  }
+}

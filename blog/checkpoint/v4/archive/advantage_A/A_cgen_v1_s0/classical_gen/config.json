@@ -1,0 +1,20 @@
+{
+  "arm": "classical_gen",
+  "gen_kind": "classical_v1",
+  "qt_hidden": [
+    48,
+    48
+  ],
+  "qt_fourier": "harm",
+  "n_freqs": 3,
+  "n_qubits": 8,
+  "n_layers": 8,
+  "bottleneck_width": 64,
+  "nu_range": [
+    0.001,
+    0.05
+  ],
+  "nu_encode": "log",
+  "n_deployed_params": 3795,
+  "bench_n_pts": 262144
+}

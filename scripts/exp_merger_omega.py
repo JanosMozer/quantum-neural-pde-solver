@@ -67,9 +67,13 @@ class MergerMLP(nn.Module):
 class HarmMLP(nn.Module):
     """Direct harmonic MLP — the classical architecture that hit ω ≤ 2%."""
 
-    def __init__(self, hidden=(96, 96), t_max=40.0, k_max=6, axis_extra=0):
+    def __init__(self, hidden=(96, 96), t_max=40.0, k_max=6, axis_extra=0,
+                 orbit_omega: float = 0.0, orbit_frame: bool = False):
         super().__init__()
-        self.fourier = FourierFeatureMapHarmonic(k_max=k_max, t_max=t_max, axis_extra=axis_extra)
+        self.fourier = FourierFeatureMapHarmonic(
+            k_max=k_max, t_max=t_max, axis_extra=axis_extra,
+            orbit_omega=orbit_omega, orbit_frame=orbit_frame,
+        )
         d = self.fourier.out_dim
         layers: list[nn.Module] = []
         prev = d

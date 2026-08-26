@@ -1,0 +1,11 @@
+{
+  "arch": "harm_mlp_h48_k3",
+  "hidden": [
+    48,
+    48
+  ],
+  "k_max": 3,
+  "n_deployed_params": 3795,
+  "training": "classical_distill",
+  "teacher": "v3_classical_96_96_k6"
+}

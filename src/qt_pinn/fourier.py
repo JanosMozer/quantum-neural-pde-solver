@@ -108,15 +108,25 @@ class FourierFeatureMapHarmonic(nn.Module):
 
     Structured (not random RFF) so a small QT-generated MLP can fit vortex
     merger filaments that TGV's k≤2 basis cannot represent.
+
+    Optional ``orbit_omega`` (rad / unit time) adds sin/cos(Ωt), sin/cos(2Ωt)
+    so co-rotating 4-fold structure is representable (plain t,t² cannot).
+
+    If ``orbit_frame`` is True, spatial Fourier features are evaluated in a
+    frame rotating at ``orbit_omega`` about the domain center (π,π). Same
+    ``out_dim`` as the lab-frame map, so checkpoint shapes still match.
     """
 
     def __init__(self, k_max: int = 6, t_max: float = 40.0, n_time_feats: int = 2,
-                 axis_extra: int = 0) -> None:
+                 axis_extra: int = 0, orbit_omega: float = 0.0,
+                 orbit_frame: bool = False) -> None:
         super().__init__()
         if n_time_feats not in (1, 2):
             raise ValueError("n_time_feats must be 1 or 2")
         self.n_time_feats = n_time_feats
         self.t_max = float(t_max)
+        self.orbit_omega = float(orbit_omega)
+        self.orbit_frame = bool(orbit_frame) and abs(float(orbit_omega)) > 1e-12
         inv_2pi = 1.0 / (2.0 * math.pi)
         pairs = []
         seen = set()
@@ -149,16 +159,37 @@ class FourierFeatureMapHarmonic(nn.Module):
             B[1, j] = ky * inv_2pi
         self.register_buffer("B", B)
         self._n_spatial = 2 * len(pairs)
+        self._n_orbit = 4 if abs(self.orbit_omega) > 1e-12 else 0
 
     @property
     def out_dim(self) -> int:
-        return self._n_spatial + self.n_time_feats
+        return self._n_spatial + self.n_time_feats + self._n_orbit
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        proj = x @ self.B
+        t = x[:, 2:3]
+        if self.orbit_frame:
+            # Co-rotating frame about domain center (π, π); Ω<0 is DNS sense.
+            om = self.orbit_omega
+            c, s = torch.cos(om * t), torch.sin(om * t)
+            cx = math.pi
+            x0 = x[:, 0:1] - cx
+            y0 = x[:, 1:2] - cx
+            xr = c * x0 - s * y0 + cx
+            yr = s * x0 + c * y0 + cx
+            coords = torch.cat([xr, yr, t], dim=-1)
+        else:
+            coords = x
+        proj = coords @ self.B
         spatial = torch.cat([torch.sin(2 * math.pi * proj), torch.cos(2 * math.pi * proj)], dim=-1)
-        t_norm = x[:, 2:3] / self.t_max
+        t_norm = t / self.t_max
         time_feats = t_norm if self.n_time_feats == 1 else torch.cat([t_norm, t_norm ** 2], dim=-1)
+        if self._n_orbit:
+            om = self.orbit_omega
+            orbit = torch.cat(
+                [torch.sin(om * t), torch.cos(om * t), torch.sin(2 * om * t), torch.cos(2 * om * t)],
+                dim=-1,
+            )
+            return torch.cat([spatial, time_feats, orbit], dim=-1)
         return torch.cat([spatial, time_feats], dim=-1)
 
 

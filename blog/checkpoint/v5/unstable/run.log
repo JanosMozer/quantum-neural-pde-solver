@@ -1,0 +1,71 @@
+DNS perturbed TGV n=192 ν=0.03 T=12.0 boost=5.5
+  DNS t= 0.90/12.0  |ω|_mean=1.3026
+  DNS t= 1.90/12.0  |ω|_mean=1.2361
+  DNS t= 2.90/12.0  |ω|_mean=1.1672
+  DNS t= 3.90/12.0  |ω|_mean=1.1009
+  DNS t= 4.90/12.0  |ω|_mean=1.0403
+  DNS t= 5.90/12.0  |ω|_mean=0.9856
+  DNS t= 6.90/12.0  |ω|_mean=0.9359
+  DNS t= 7.90/12.0  |ω|_mean=0.8904
+  DNS t= 8.90/12.0  |ω|_mean=0.8485
+  DNS t= 9.90/12.0  |ω|_mean=0.8097
+  DNS t=10.90/12.0  |ω|_mean=0.7740
+  DNS t=11.90/12.0  |ω|_mean=0.7411
+  DNS t=12.00/12.0  |ω|_mean=0.7380
+saved /home/mozer/qt-pinn/blog/checkpoint/v5/unstable/dns/reference.pt
+Training classical on perturbed DNS…
+warm-start classical from /home/mozer/qt-pinn/blog/checkpoint/v2/classical/model.pt
+/home/mozer/qt-pinn/scripts/plot_tgv_unstable_triplet.py:225: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:822.)
+  f"  [classical] {step+1:5d}/{steps}  loss={float(loss):.4e}  [{time.time()-t0:.0f}s]",
+  [classical]     1/8000  loss=1.5866e+02  [0s]
+  [classical]   500/8000  loss=2.6128e+01  [7s]
+  [classical]  1000/8000  loss=2.6301e+01  [13s]
+  [classical]  1500/8000  loss=2.5816e+01  [19s]
+  [classical]  2000/8000  loss=2.7196e+01  [26s]
+  [classical]  2500/8000  loss=2.4633e+01  [32s]
+  [classical]  3000/8000  loss=2.5502e+01  [39s]
+  [classical]  3500/8000  loss=2.5225e+01  [46s]
+  [classical]  4000/8000  loss=2.4612e+01  [52s]
+  [classical]  4500/8000  loss=2.4914e+01  [58s]
+  [classical]  5000/8000  loss=2.3547e+01  [65s]
+  [classical]  5500/8000  loss=2.4380e+01  [71s]
+  [classical]  6000/8000  loss=2.5660e+01  [77s]
+  [classical]  6500/8000  loss=2.2786e+01  [83s]
+  [classical]  7000/8000  loss=2.6025e+01  [90s]
+  [classical]  7500/8000  loss=2.3863e+01  [96s]
+  [classical]  8000/8000  loss=2.4706e+01  [103s]
+Training quantum (deployed weights) on perturbed DNS…
+  [quantum]       1/8000  loss=1.6956e+02  [0s]
+  [quantum]     500/8000  loss=2.6925e+01  [6s]
+  [quantum]    1000/8000  loss=2.7140e+01  [13s]
+  [quantum]    1500/8000  loss=2.6479e+01  [20s]
+  [quantum]    2000/8000  loss=2.6938e+01  [27s]
+  [quantum]    2500/8000  loss=2.6327e+01  [34s]
+  [quantum]    3000/8000  loss=2.7053e+01  [40s]
+  [quantum]    3500/8000  loss=2.6639e+01  [47s]
+  [quantum]    4000/8000  loss=2.4654e+01  [53s]
+  [quantum]    4500/8000  loss=2.5181e+01  [60s]
+  [quantum]    5000/8000  loss=2.6166e+01  [67s]
+  [quantum]    5500/8000  loss=2.5554e+01  [74s]
+  [quantum]    6000/8000  loss=2.6254e+01  [81s]
+  [quantum]    6500/8000  loss=2.5224e+01  [88s]
+  [quantum]    7000/8000  loss=2.6557e+01  [95s]
+  [quantum]    7500/8000  loss=2.6458e+01  [101s]
+  [quantum]    8000/8000  loss=2.5741e+01  [108s]
+  gif frame 1/121 t=0.00
+  gif frame 11/121 t=1.00
+  gif frame 21/121 t=2.00
+  gif frame 31/121 t=3.00
+  gif frame 41/121 t=4.00
+  gif frame 51/121 t=5.00
+  gif frame 61/121 t=6.00
+  gif frame 71/121 t=7.00
+  gif frame 81/121 t=8.00
+  gif frame 91/121 t=9.00
+  gif frame 101/121 t=10.00
+  gif frame 111/121 t=11.00
+  gif frame 121/121 t=12.00
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v5/unstable/media/tgv_unstable_triplet.gif (121 frames @ 10 fps ≈ 12.1s)
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v5/unstable/media/tgv_unstable_snapshots.png
+Done.

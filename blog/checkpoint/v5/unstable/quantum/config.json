@@ -1,0 +1,11 @@
+{
+  "arch": "TargetPINNNS",
+  "fourier": "tgv",
+  "hidden": [
+    32,
+    32
+  ],
+  "hard_ic": false,
+  "t_max": 12.0,
+  "nu": 0.03
+}

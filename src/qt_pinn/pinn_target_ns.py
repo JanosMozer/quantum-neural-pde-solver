@@ -35,6 +35,7 @@ class TargetPINNNS(nn.Module):
         ic_fn=None,
         n_freqs: int = 32,
         fourier_sigma_wide: float = 1.2,
+        orbit_omega: float = 0.0,
     ) -> None:
         super().__init__()
         self.hard_ic = hard_ic
@@ -52,7 +53,9 @@ class TargetPINNNS(nn.Module):
             self.in_dim = 6
         elif fourier == "harm":
             k_max = n_freqs if n_freqs >= 2 else 6
-            self.fourier = FourierFeatureMapHarmonic(k_max=k_max, t_max=t_max)
+            self.fourier = FourierFeatureMapHarmonic(
+                k_max=k_max, t_max=t_max, orbit_omega=orbit_omega,
+            )
             self.in_dim = self.fourier.out_dim
         elif fourier == "wide":
             self.fourier = FourierFeatureMapWide(

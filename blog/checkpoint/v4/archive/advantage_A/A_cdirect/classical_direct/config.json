@@ -1,0 +1,11 @@
+{
+  "arm": "classical_direct",
+  "arch": "harm_mlp",
+  "hidden": [
+    48,
+    48
+  ],
+  "k_max": 3,
+  "n_deployed_params": 3795,
+  "bench_n_pts": 262144
+}
