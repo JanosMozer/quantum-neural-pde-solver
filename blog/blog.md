@@ -1,274 +1,151 @@
-# Blog draft: Evaluating quantum circuits in Physics-Informed Neural Networks
+# Evaluating Variational Quantum Circuits in Physics-Informed Neural Networks for 2D Navier–Stokes
 
-> **Status:** methodology + working 2D NS merger solver + closed fair-advantage null + TGV media (v5). Numbers through **2026-08-26**.
->
-> **Companion:** [MODEL_CARD.md](MODEL_CARD.md) (best classical / quantum metrics). Checkpoints: [checkpoint/README.md](checkpoint/README.md).
->
-> **Working title options** (pick one):
-> 1. *A PINN PDE solver for vortex merger: classical and quantum-trained nets, same accuracy, faster inference*
-> 2. *From failed VQC-PINNs to a working NS solver — without claiming quantum advantage*
-> 3. *Debugging quantum PINNs, then solving a real 2D flow*
+[![GitHub Repository](https://img.shields.io/badge/GitHub-JanosMozer%2Fqt--pinn-blue?logo=github)](https://github.com/JanosMozer/qt-pinn)
 
----
+A systematic evaluation of variational quantum circuits (VQCs) inside physics-informed neural networks (PINNs) for 2D incompressible Navier–Stokes. The work spans ν-conditioned hypernetworks, input-conditioned VQC field maps, and quantum weight generators for vortex merger. Matched classical baselines, degeneracy guards, and fixed DNS holdouts show no robust quantum advantage on these tasks. The project product is a classical HarmMLP PINN that reconstructs four-vortex merger against spectral DNS to **1.29%** FD-curl ω relative L2, with a smaller distilled deployable net at **1.78%** ω and ~2.5× inference throughput.
 
-## 0. One-sentence thesis
+Companion metrics: [MODEL_CARD.md](MODEL_CARD.md). Versioned checkpoints and media: [checkpoint/](checkpoint/).
 
-**Narrow claim (recommended):** Input-conditioned VQCs and ν-hypernetworks did **not** beat matched classical models on Burgers / TGV / Kolmogorov. The project then produced a working PINN solver for 2D vortex merger (**ω ≤ 2%** vs spectral DNS). In a **fair** end-to-end test, a quantum weight generator does **not** reliably beat a matched classical generator at equal deployed latency (Q wins 2/6 seeds; classical mean slightly better). The earlier v4 “2.5× faster quantum” product checkpoint was an inject-only no-op (**circuit unused**); the speedup is a smaller MLP.
+## 1. Introduction
 
-**Do not claim:** “A variational quantum circuit evaluates Navier–Stokes at query time,” swirl/orbit fidelity on product weights, or that every QNN hyperparameter wins.
+### 1.1 Quantum Circuits for Scientific Machine Learning
+Physics-informed neural networks enforce PDE residuals, boundary conditions, and data constraints through automatic differentiation. Pairing PINNs with variational quantum circuits is a recurring “quantum for science” proposal: either the circuit generates network weights from a physical parameter (hypernetwork), or it evaluates the field map \(f(x,y,t)\) directly. In simulation, both paths are expensive. PennyLane `default.qubit` runs on CPU; PINN training requires second-order autodiff through the circuit; wall-clock cost is routinely 100–800× a matched classical MLP at equal collocation size.
 
----
+The scientific claim is not that a circuit can be wired into a loss. The claim is that, under fair capacity and protocol matching, the quantum model improves a primary metric without collapsing to a trivial solution.
 
-## 0.1 Where we are now (2026-08-26)
+### 1.2 Evaluation Failure Modes
+Early quantum-PINN reports are easy to invalidate:
+1. **Trivial solutions.** Soft initial-condition penalties admit \(u=v=0\) on Burgers and TGV when the PDE residual of the zero field is small.
+2. **Unequal architectures.** Comparing a tiny deployed MLP labeled “quantum” to a much larger classical teacher confuses size with quantum compute.
+3. **Dead or constant circuits.** Fixed circuit inputs, zeroed projection weights, or unused generators look like quantum training while computing classically.
+4. **Proxy metrics.** PDE residual alone, or velocity MSE without vorticity structure, can look strong while the flow topology is wrong.
 
-| Layer | State |
-|-------|-------|
-| **Product merger solvers** | Classical HarmMLP 96–96: **ω 1.29%**. Quantum inject h48: **ω 1.78%**, ~2.5× faster inference. Shipped under `checkpoint/v4/{classical,quantum,dns,media}`. |
-| **Fair QT advantage** | **Null.** Closed; evidence in `v4/archive/advantage_scoreboard.md`. |
-| **Orbit / swirl co-rotation** | **Not promoted.** Pointwise ω can pass while peaks freeze; orbit Fourier helps but Rel≤2% *and* swirl≤5% never landed in one product checkpoint. |
-| **TGV media (v5)** | Dense \|ω\| contours + Exact\|Classical\|Quantum triplet + **unstable** TGV (bottom-left boost breaks exact balance). |
-| **Blog** | This draft + model card. Hero still: merger triplet gif. |
+This project treats those failure modes as first-class engineering constraints: matched parameters (or classical ≥ quantum), fixed holdouts, soft vs hard IC made explicit, and degeneracy diagnostics (`collapse_ratio`, `correction_rms`, circuit ablation).
 
----
+### 1.3 Project Goal
+The applied goal is a reproducible 2D Navier–Stokes PINN for **vortex merger** against spectral DNS, with FD-curl vorticity error ≤ 2%. The research goal is to test whether VQC hypernetworks or generators beat matched classical models on TGV, Kolmogorov forcing, Burgers, and merger. Evidence cutoff: 2026-08-26. All quantum results are simulator-only; no hardware.
 
-## 0.2 What worked vs what did not
+## 2. Fairness Protocol and Metrics
 
-### Worked
-| Method | Why it mattered |
-|--------|-----------------|
-| Hard IC \(u = u_{IC} + t N\) | Killed soft-IC collapse to the trivial zero field |
-| Harmonic Fourier features (merger) | Hit FD-curl ω ≤ 2% where plain RFF / streamfunction failed |
-| FP32 curl gate on fixed DNS times | Stops “looks good in MSE, wrong vorticity” |
-| Distill → small HarmMLP 48–48 | Same ω band, ~2.5× inference throughput |
-| Degeneracy guards (`collapse_ratio`, `correction_rms`, circuit ablation) | Invalidated fake quantum wins |
-| Integrating-factor RK4 for stiff TGV DNS | Explicit viscous RK4 blew up at ν~0.1 |
-| `orbit_omega` Fourier terms | Unfroze early peak motion (research path; not product) |
+### 2.1 Matching Rules
+1. **Capacity.** Trainable parameter counts matched, or classical ≥ quantum.
+2. **Protocol.** Same domain, viscosity ν, collocation / IC sampling, and (when soft IC) penalty weights λ.
+3. **Features.** Where the VQC sees angle encodings, the classical control receives the corresponding sin/cos features.
+4. **Holdouts.** Fixed grids or held-out ν values; not a fresh i.i.d. draw of the training range labeled as generalization.
+5. **Wall time.** Report simulator wall clock, not only optimizer step count.
 
-### Did not work / do not claim
-| Attempt | Outcome |
-|---------|---------|
-| ν-hypernetwork VQC (TGV, Kolmogorov) | Classical wins; quantum extrap often catastrophic |
-| Soft-IC Burgers VQC | Fake quantum win via harder collapse |
-| Hard-IC Burgers input VQC | Classical learns; quantum freezes near IC |
-| Constant-input quantum generator | No functional quantum computation |
-| v4 inject “quantum speedup” | Circuit unused; classical distill matches ω |
-| Fair e2e QNN vs classical gen (Exp A) | No robust advantage (mean +0.10 pp against Q) |
-| Multi-ν family generators (Exp B) | Both arms ~33%+ ω — not solvers |
-| Orbit-gated product merger | Rel / swirl tradeoff; not shipped |
-| Dense FD polish at n_side=96 near gate | Blew up near-converged models |
-
----
-
-## 1. Audience & tone
-
-- Audience: ML + scientific computing practitioners (not QC hype)
-- Tone: engineering lab notebook → polished narrative
-- Honesty: lead with methodology and failure modes; merger solver is the positive product story; QT advantage is a **null**
-
----
-
-## 2. Article outline (sections to write)
-
-### Hook
-- Motivation: PINNs + VQCs as a popular “quantum for science” story
-- Question asked: *Can a variational quantum circuit beat a matched classical model on a PDE residual?*
-
-### Setup (what we mean by fair)
-- Same collocation / IC / steps / λ when soft IC
-- Matched parameter counts (or classical ≥ quantum)
-- Same encoding features where relevant (angles → sin/cos for classical)
-- Primary metrics defined up front
-- Degeneracy guards: collapse to \(u=0\), freeze at IC
-
-### Experiment ladder
-1. Hypernetwork path (ν → MLP weights) — TGV, then Kolmogorov — **null**
-2. Architecturally valid path — input-conditioned VQC as \(f(x,y,t)\) on Burgers — **null / collapse**
-3. Soft IC → hard IC after collapse artifact
-4. **PDE solver (the actual goal):** 2D vortex merger vs spectral DNS — classical + quantum-trained PINNs
-5. Fast deployed net (v4): same accuracy band, ≥2× inference — **size**, not circuit
-6. Fair e2e generators — **null advantage**
-7. (Coda) TGV return + unstable perturbation media (v5)
-
-### Bugs that invalidate early results
-### Results tables (+ model card)
-### Media plan (§11a)
-### Why quantum lost (measurement vs structural)
-### Cost realism (simulator wall time)
-### What would count as a future positive result
-### Conclusion
-
----
-
-## 3. Framing: research question evolution
-
-| Stage | Question | Outcome |
-|-------|----------|---------|
-| Early | Can a quantum weight generator solve NS? | Invalid (bugs + constant-input circuit) |
-| Tier A | Can a classical target MLP solve NS at all? | Yes (~2–4% velocity error) |
-| Tier B | Does ν → weights with a VQC beat a matched MLP? | No (TGV) |
-| Tier C | Same on harder forced NS (Kolmogorov)? | No |
-| Burgers VQC | Does input-conditioned VQC beat matched MLP as \(f(x,y,t)\)? | Soft IC: fake win via collapse; hard IC: classical wins, quantum freezes |
-| Merger v3 | Can a PINN hit FD-curl ω ≤ 2% vs DNS? | **Yes** — HarmMLP 96–96, k≤6 (**1.29%**); QT distill same net |
-| Merger v4 product | Same band, ≥2× inference | **Yes** size win (1.78% ω, ~2.5×) — circuit unused |
-| Merger v4 fair | Does e2e QNN beat matched classical gen? | **No** (Q 2/6; mean favors classical) |
-| Orbit fidelity | Pointwise ω *and* peak co-rotation? | Partial; **not promoted** |
-| v5 TGV | Sharper \|ω\| media + unstable boost | Media / demo (not an advantage claim) |
-
-**Architectural insight:** Hypernetworks only see ν; the circuit never evaluates the field. Input-conditioned VQC-PINN is the first setup where the circuit *is* the solution map.
-
----
-
-## 4. Methodology checklist (copy into article)
-
-### Fairness
-- [x] Matched (or classical ≥) trainable parameters
-- [x] Same domain, ν, collocation protocol
-- [x] Fixed holdout grids (not “resampled train range”)
-- [x] Soft vs hard IC explicit
-- [x] Report wall time, not only steps
-
-### Metrics
+### 2.2 Primary Metrics
 | Problem | Primary metric | Secondary |
 |---------|----------------|-----------|
-| TGV (exact soln) | Space-time / gauge-aware rel-L2; in-range vs extrap ν | Wall time |
-| Kolmogorov (no exact) | Holdout PDE residual RMS | Extrapolation in ν |
+| Taylor–Green (exact) | Velocity / gauge-aware pressure rel-L2; in-range vs extrapolated ν | Wall time |
+| Kolmogorov (forced NS) | Holdout PDE residual RMS | Extrapolation in ν |
 | Burgers VQC | Holdout PDE RMS under **hard IC** | `collapse_ratio`, `correction_rms` |
+| Vortex merger | FD-curl ω rel-L2 max at \(t\in\{0,2,5,8,12,15\}\), FP32 | Velocity rel-L2; inference pts/s |
 
-### Degeneracy guards (Burgers)
+### 2.3 Degeneracy Guards
 | Diagnostic | Meaning | Fail if |
 |------------|---------|---------|
-| `collapse_ratio` = field_rms(t=1) / IC_rms | Near-zero field | < 0.1 |
-| `correction_rms` under hard IC \(u = u_{IC} + t N\) | Learned time evolution | ≪ 0.01 × IC_rms (freeze) |
-| Soft IC `bc_loss ≈ 0.5` | Matches \(u=v=0\) predictor | Plateau at ~0.5 with falling PDE → collapse |
+| `collapse_ratio` = field_rms(\(t=1\)) / IC_rms | Near-zero field | < 0.1 |
+| `correction_rms` under hard IC \(u=u_{IC}+t\,N\) | Learned time evolution | ≪ 0.01 × IC_rms (freeze) |
+| Soft IC `bc_loss ≈ 0.5` | Matches \(u=v=0\) predictor | Plateau at ~0.5 with falling PDE |
+| Circuit ablation | Randomize `q_weights` / zero feats | ω does not degrade → circuit unused |
 
-**Analytic check:** frozen IC (\(N=0\)) on Burgers has PDE RMS ≈ **1.56** (advection-dominated). Quantum hard-IC scout landed at **1.63** — functionally frozen.
+**Success criteria.** Quantum win: primary metric ≤ 90% of classical *and* non-degenerate. Parity: within ~10%. Otherwise classical wins / null. Soft-IC PDE RMS alone is never promoted.
 
-### Success criteria used in this project
-- Quantum win: primary metric ≤ 90% of classical, *and* non-degenerate
-- Parity: within ~10%
-- Else: classical wins / null result
-- Do **not** promote soft-IC PDE RMS alone
+## 3. System Architecture
 
----
+### 3.1 Classical Target PINNs
+Deployed solvers are classical MLPs evaluated at query time \((x,y,t)\mapsto(u,v,p)\):
+- **DirectNSMLP** — Fourier / polynomial time features for TGV demos.
+- **HarmMLP / TargetPINNNS** — harmonic Fourier features in \(x,y\) with time channels, used for merger (product: 96–96, \(k\le 6\); distilled student: 48–48, \(k\le 3\)).
 
-## 5. Critical bugs (invalidate early “results”)
+Training combines DNS collocation (merger), PDE residual, and optional hard IC of the form \(u = u_{IC} + t\,N\).
 
-Use these as a “debugging quantum ML” section — high value for a professional blog.
-
-### 5.1 Pressure sign inconsistency (TGV)
-- **Symptom:** `bc_loss ≈ 0.56`, low PDE loss, ~100% rel-L2 → collapse to \(u=v=p=0\)
-- **Cause:** Exact pressure sign disagreed with velocity convention → coded residual ≠ analytic
-- **Fix:** \(p = +\frac14(\cos 2x + \cos 2y)\,e^{-4\nu t}\)
-- **Lesson:** Low PDE residual can mean “learned the zero field,” not “solved the PDE”
-
-### 5.2 Dead time channel (TGV Fourier map)
-- **Symptom:** Adding “time features” changed nothing (byte-identical runs)
-- **Cause:** \(t\) row of Fourier matrix was all zeros
-- **Fix:** Explicit \(t/T\) (and optionally \(t^2/T^2\)); TGV decay is not periodic in \(t\)
-
-### 5.3 Easy regime hides time dependence
-- Default \(\nu=0.01, T=1\) → amplitude \(\approx e^{-0.02}\approx 0.98\); ignoring time is nearly optimal
-- Harder regime example: \(\nu=0.1, T=5\)
-
-### 5.4 Constant-input quantum generator
-- Circuit saw a fixed vector → one weight vector forever
-- Equivalent to classical lookup of static weights; **no functional quantum computation**
-- Invalidates Tier-0 “quantum generator” advantage claims
-
-### 5.5 Soft IC + exact trivial solution (Burgers)
-- \(u=v=0\) solves Burgers with zero residual
-- Soft IC with moderate \(\lambda_{bc}\) → basin of “be zero”
-- Scout: both models sat at `bc ≈ 0.5` (= MSE of IC vs zero); quantum looked better only because it collapsed *harder*
-- **Fix:** hard IC \(u = u_{IC} + t\,N\)
-
-### 5.6 Encoding / frequency bugs (Burgers VQC)
-- Double-\(\pi\) scaling on frequencies (awkward non-harmonics of IC)
-- Even time frequencies alias \(t=0\) with \(t=1\) over \([0,1]\)
-- Fix: dimensionless ladder; spatial even freqs for IC fundamental; **odd** freqs for time
-
-### 5.7 Evaluation pitfalls (general)
-| Pitfall | Effect |
-|---------|--------|
-| Rel-L2 only at final \(t\) with tiny amplitude | Explosive % error |
-| “Holdout” = another i.i.d. draw of train range | Fake generalization |
-| Equal step count while quantum still descending | Unfair |
-| Linear ν encoding + log-uniform train ν | Extrapolation off-manifold |
-| Geometric \(2^i\pi\) RY ladder | Aliasing / erratic errors |
-
----
-
-## 6. Results: Tier A–C (hypernetworks)
-
-Source of truth for NS: `pdes/ns2d/EXPERIMENT_ANALYSIS.md`.
-
-### Tier A — Direct classical PINN (sanity gate)
-| Run | Headline |
-|-----|----------|
-| `ns_direct_a3` | ~2.7% mean rel-L2 @ \(t=1\) after physics fix — **gate pass** |
-| `ns_direct_a3_time` | Identical → proved dead time channel |
-| `a3_nu0p1_T5` | Harder regime; velocity ~4% @ \(t=5\) |
-| `kol_direct_s0` | Kolmogorov PDE RMS **0.00246** — learnable |
-
-**Point for article:** Quantum must beat a working classical baseline (~2–4%), not “better than 100% collapse.”
-
-### Tier B v1 — TGV parametric (\(\nu \mapsto\) weights), `reupload`
-| Split | Classical `ns_par_c_s0` | Quantum `ns_par_q_s0` | Q/C |
-|-------|-------------------------|------------------------|-----|
-| in-range | **1.33%** | 1.72% | 1.29 |
-| extrap-lo | **2.09%** | 49.0% | **23.4** |
-| Wall time | 1182 s | 2146 s | 1.82× |
-
-**Verdict:** Classical wins. Quantum interpolates OK, extrapolates catastrophically.
-
-### Tier B v2 — `expect` + log-ν
-| Split | Classical v2 | Quantum v2 | Q/C |
-|-------|--------------|------------|-----|
-| in-range | 1.99% | 2.21% | 1.11 |
-| extrap-lo | 31.0% | 31.3% | 1.01 |
-
-Fixed quantum extrap-lo erraticism but **hurt** classical vs v1. Best classical overall remains **v1**. Still no QC win (extrap Q/C ≈ 1.58 vs best classical framing).
-
-### Tier C — Kolmogorov forced NS
-| Split | Classical `kol_par_c_s0` | Quantum `kol_par_q_s0` | Q/C |
-|-------|--------------------------|------------------------|-----|
-| in-range PDE RMS | **0.00288** | 0.00534 | 1.85 |
-| Combined extrap | — | — | **1.50** |
-| Wall time | 1145 s | 2119 s | 1.85× |
-
-**Verdict:** Same null on a harder PDE with sustained nonlinearity. Hypernetwork VQC line closed.
-
----
-
-## 7. Results: Burgers input-conditioned VQC-PINN
-
-### Architecture
+### 3.2 Quantum Paths Tested
 ```
-(x,y,t) → angle encode → re-uploading VQC → ⟨Z_i⟩ → linear → (u,v)   [~92 params]
-(x,y,t) → same angles → sin/cos → tanh MLP → (u,v)                 [~98 params]
-```
-Domain: \(x,y\in[-1,1]\), \(t\in[0,1]\), \(\nu=0.01/\pi\approx 0.003183\).
+Path A — ν-hypernetwork (TGV / Kolmogorov)
+  ν ──► VQC / classical encoder ──► MLP weights ──► TargetPINN(x,y,t)
 
-Hard IC (default after collapse discovery):
+Path B — Input-conditioned VQC (Burgers)
+  (x,y,t) ──► angle encode ──► re-uploading VQC ──► ⟨Z⟩ ──► linear ──► (u,v)
+
+Path C — Conditioned weight generator (merger)
+  features ──► ConditionedQuantumGeneratorV2 ──► deployed HarmMLP weights
+                 (classical twin: ConditionedClassicalGeneratorV2)
+```
+
+*Figure 1: Three quantum integration patterns. Only Path B evaluates the circuit on field coordinates. Paths A and C use the circuit (when live) as a weight generator; inference remains a classical MLP.*
+
+Architectural constraint: a hypernetwork that never sees \((x,y,t)\) cannot claim circuit-in-the-loop PDE evaluation. Path C can still be a fair test of whether a quantum generator beats a matched classical generator at **equal deployed latency**.
+
+### 3.3 DNS Reference (Merger)
+Periodic box \([0,2\pi]^2\), ν = 0.005, four co-rotating Gaussian vortices → single core by \(t\sim 15\). Reference: 256² spectral DNS (`checkpoint/v3/dns/`, mirrored under `v4/dns/`). Gate times \(t\in\{0,2,5,8,12,15\}\). Metric: finite-difference curl \(\omega=\partial_x v-\partial_y u\), FP32 only, max relative L2 ≤ 2%.
+
+![Merger triplet](./checkpoint/v4/media/merger_triplet.gif)
+
+*Figure 2: Vortex merger — DNS | classical HarmMLP | quantum-trained deployable net. Product gate: FD-curl ω ≤ 2%. No tracer particles.*
+
+## 4. Debugging Invalid Early Results
+
+### 4.1 Pressure Sign Inconsistency (TGV)
+Symptom: `bc_loss ≈ 0.56`, low PDE loss, ~100% rel-L2 → collapse to \(u=v=p=0\). Cause: exact pressure sign disagreed with the velocity convention, so the coded residual did not match the analytic solution. Fix:
+
+\[
+p = +\tfrac14(\cos 2x + \cos 2y)\,e^{-4\nu t}.
+\]
+
+Lesson: a low PDE residual can mean “learned the zero field,” not “solved the PDE.”
+
+### 4.2 Dead Time Channel
+Adding Fourier “time features” produced byte-identical runs because the \(t\) row of the feature matrix was identically zero. Fix: explicit \(t/T\) (and optionally \(t^2/T^2\)). Easy regimes (\(\nu=0.01\), \(T=1\)) further hide time dependence because amplitude \(\approx e^{-0.02}\approx 0.98\).
+
+### 4.3 Constant-Input Quantum Generator
+A generator whose circuit input is a fixed vector emits one weight vector forever — classical lookup of static weights, not functional quantum computation. Such runs invalidate Tier-0 advantage claims.
+
+### 4.4 Soft IC Collapse on Burgers
+\(u=v=0\) solves 2D Burgers with zero residual. Soft IC with moderate \(\lambda_{bc}\) creates a basin of “be zero.” Soft-IC scouts showed quantum “winning” PDE RMS (~0.018 vs ~0.21) while both plateaus sat at `bc ≈ 0.5`; quantum collapsed harder. Fix: hard IC
+
 \[
 u = u_{IC}(x,y) + t\,N_u,\quad
 u_{IC}=\sin(\pi x)\cos(\pi y),\quad
 v_{IC}=-\cos(\pi x)\sin(\pi y).
 \]
 
-Scripts: `scripts/train_burgers_vqc.py` (`--preset scout|full`), `compare_burgers_vqc.py`.
-Model: `src/qt_pinn/burgers_vqc_pinn.py`.
+### 4.5 Encoding / Frequency Bugs
+Double-\(\pi\) frequency scaling and even time frequencies that alias \(t=0\) with \(t=1\) on \([0,1]\) produce erratic VQC errors. Fix: dimensionless ladders; spatial even frequencies for the IC fundamental; **odd** time frequencies.
 
-### Soft IC scout (INVALID — do not report as a win)
-| | Classical | Quantum |
-|--|-----------|---------|
-| Holdout PDE RMS | ~0.21 | ~0.018 |
-| `bc` plateau | ~0.50 | ~0.50 |
-| Field | near zero | nearer zero |
+## 5. Experiment Ladder: Hypernetworks and Burgers VQC
 
-**Interpretation:** Quantum “won” by collapsing harder to the trivial solution.
+### 5.1 Tier A — Classical Sanity Gate
+Direct classical PINNs establish that the PDE is learnable after physics fixes: TGV ~2.7% mean velocity rel-L2 at \(t=1\); harder regime \(\nu=0.1\), \(T=5\) ~4% at \(t=5\); Kolmogorov direct PDE RMS **0.00246**. Quantum models must beat a working classical baseline, not a collapsed field.
 
-### Hard IC scout (VALID null)
-Checkpoints: `burg_vqc_c_scout`, `burg_vqc_q_scout` (400 steps, 512 colloc, ~12–13 min quantum).
+### 5.2 Tier B — TGV Parametric Hypernetworks (\(\nu\mapsto\) weights)
+| Split | Classical `ns_par_c_s0` | Quantum `ns_par_q_s0` | Q/C |
+|-------|-------------------------|------------------------|-----|
+| in-range | **1.33%** | 1.72% | 1.29 |
+| extrap-lo | **2.09%** | 49.0% | **23.4** |
+| Wall time | 1182 s | 2146 s | 1.82× |
+
+A redesigned `expect` + log-ν encoding removed quantum extrapolation chaos but did not produce a win (in-range Q/C ≈ 1.11; best classical remains v1). **Verdict: classical wins.**
+
+### 5.3 Tier C — Kolmogorov Forced NS
+| Split | Classical | Quantum | Q/C |
+|-------|-----------|---------|-----|
+| in-range PDE RMS | **0.00288** | 0.00534 | 1.85 |
+| Combined extrap | — | — | **1.50** |
+| Wall time | 1145 s | 2119 s | 1.85× |
+
+Same null on a harder PDE with sustained nonlinearity. Hypernetwork VQC line closed.
+
+### 5.4 Input-Conditioned Burgers VQC
+Matched capacity (~92 quantum vs ~98 classical parameters):
+
+```
+(x,y,t) → angles → re-uploading VQC → ⟨Z_i⟩ → linear → (u,v)
+(x,y,t) → same angles → sin/cos → tanh MLP → (u,v)
+```
+
+Hard-IC scout (400 steps, 512 collocation points):
 
 | Metric | Classical | Quantum | Frozen IC (\(N=0\)) |
 |--------|-----------|---------|---------------------|
@@ -276,289 +153,113 @@ Checkpoints: `burg_vqc_c_scout`, `burg_vqc_q_scout` (400 steps, 512 colloc, ~12�
 | `collapse_ratio` | 0.67 | 0.996 | 1.0 |
 | `correction_rms` | 0.57 | **0.024** | 0 |
 | Wall time | 4 s | 732 s | — |
-| Q/C | — | **2.04** | — |
 
-**Behavior:**
-- Classical: `corr_rms` rises; field decays — learning viscous/advective evolution
-- Quantum: `corr_rms` falls 0.48 → 0.024; plateaus at frozen-IC residual from ~step 125
+Classical learns viscous/advective evolution (`corr_rms` rises). Quantum freezes near the IC residual floor from ~step 125. Full preset (~60 h) was not run: failure is expressivity / basin geometry, not undertraining. Simulator cost: ~7 s/step at 512 points for quantum vs milliseconds for classical on GPU.
 
-**Decision:** Do **not** run `--preset full` (~60 h) on this architecture. Failure is basin / expressivity, not undertraining.
+### 5.5 Structural Reading
+1. Mapping \(\nu\to\sim 1500\) weights is a classical-friendly encoder problem; the circuit never sees the field.
+2. TGV families are nearly linear diffusion (advection and pressure cancel) — a weak stress test for entanglement.
+3. A linear head on \(\langle Z\rangle\) plus a small re-uploading circuit behaves like low-order trigonometric features; Burgers advection needs a second harmonic that the matched MLP can form and the VQC did not.
+4. Matched parameter count does not imply matched useful function class under quantum constraints.
 
-### Cost note (why quantum “trains forever”)
-- PennyLane `default.qubit` is CPU; `.cpu()` on angles/weights each forward
-- PINN needs **second** autograd through the circuit
-- Scout ~7 s/step at 512 points; full 2048×8000 was multi-day territory
-- Classical 98-param MLP: milliseconds/step on GPU
+## 6. Product Solver: 2D Vortex Merger
 
----
+Earlier sections concern failed quantum architectures. This section is the shipped solver: reconstruct four same-sign vortex merger against spectral DNS.
 
-## 8. Structural reasons quantum lost (for discussion section)
-
-### Hypernetwork path
-1. Map \(\nu \to \sim 1500\) weights is a classical-friendly encoder problem
-2. Circuit never sees \((x,y,t)\)
-3. TGV family is nearly linear diffusion (advection/pressure cancel) — weak stress test for entanglement
-4. Simulation cost 1.8–2× with worse accuracy
-
-### Input-conditioned Burgers VQC
-1. Linear head on \(\langle Z\rangle\) + small re-uploading circuit ≈ low-order trigonometric features
-2. Hard IC residual needs a **second harmonic** of the IC (advection); MLP mixes sin/cos and can form it; VQC froze at \(N=0\)
-3. \(N=0\) is a critical point of a small linear head — attractive basin
-4. Matched param count does not imply matched *useful* function class after quantum constraints
-
----
-
-## 9. The actual goal: a PDE solver for 2D vortex merger
-
-Earlier sections are about **failed** quantum architectures. This section is the product: a PINN that reconstructs a **four same-sign vortex merger** against spectral DNS (no closed form) — and a **fair** test of whether an end-to-end quantum weight generator beats a matched classical generator.
-
-**Problem.** Periodic box \([0,2\pi]^2\), \(\nu=0.005\), four co-rotating Gaussian vortices → one core by \(t\sim 15\). Reference: 256² spectral DNS in `blog/checkpoint/v3/dns/`. Gate times \(t\in\{0,2,5,8,12,15\}\).
-
-**Metric.** Finite-difference curl \(\omega = \partial v/\partial x - \partial u/\partial y\) on a subsampled grid, **FP32 only**. Target for the product solver: max relative L2 of ω vs DNS **≤ 2%**.
-
-**Hero media (no tracers):** `blog/checkpoint/v4/media/merger_triplet.gif`.
-
-### 9.1 Product checkpoint (v4 deployed solver)
-
-| | Classical teacher | v4 “quantum” inject |
-|--|-------------------|---------------------|
-| Deployed net | HarmMLP 96–96, \(k\le 6\) | HarmMLP **48–48**, \(k\le 3\) |
-| Params | 13 347 | **3 795** |
-| ω max | **1.29%** | **1.78%** |
-| Throughput | ~326 Mpts/s | **~2.5×** |
-
-**Correction:** the v4 inject path zeroed the generator projection weight and copied a classically distilled student into the bias. The circuit did **not** contribute. A classical distill of the same h48k3 hits **1.75%** (`classical_h48_baseline/`). That “2.5× faster quantum” claim was architecture size, not quantum computation.
-
-### 9.2 Fair quantum advantage (Experiment A)
-
-**Protocol.** Train `ConditionedQuantumGeneratorV2` end-to-end (circuit + proj get gradients) vs `ConditionedClassicalGeneratorV2` at matched `n_qubits` / bottleneck. Both emit weights for the **same** deployed HarmMLP 48–48, \(k\le 3\). Require circuit ablation (randomize `q_weights` / zero feats) to degrade ω.
-
-**Multi-seed (q=8, L=4, bn=64; seeds 0–5, deduped):**
-
-| | Quantum | Classical-gen |
-|--|---------|---------------|
-| Mean ω | 2.325% ± 0.38% | **2.220% ± 0.24%** |
-| Seed wins | 2/6 | **4/6** |
-| Best seed | 1.895% (s1) | 1.987% (s1) / long **1.823%** |
-
-Δ mean **+0.10 pp against quantum**. Circuit ablation still passes on quantum runs. Other sweeps (bn16, V1 probs, long+curl×2) likewise favor classical or are within noise; full tables: `blog/checkpoint/v4/archive/advantage_scoreboard.md`.
-
-**Claim (honest).** On this task we **did not** find a robust quantum advantage. End-to-end QNNs can run with a live circuit at matched deployed latency, but they do not reliably beat matched classical generators on ω. v4’s earlier “2.5× faster quantum” story was an inject/no-op artifact.
-
-### 9.3 Experiment B (ν-family) — null
-
-Multi-ν DNS family (ν∈{0.002…0.02}), hold out ν=0.008. Both quantum and classical generators plateau ~**33–50%** train ω_mean (≫2% gate) — useless as solvers. Mid-range + teacher variants do not rescue either arm. Not used for an advantage claim.
-
-### 9.4 Orbit / swirl campaign — closed, not promoted
-
-Pointwise Rel-L2 can look fine while vorticity **maxima freeze** (DNS peaks keep orbiting). Adding `orbit_omega≈−1.22` Fourier features unfroze early motion; full-horizon swirl ≤5% with Rel≤2% was **not** achieved in one promoted checkpoint (best compromise ~1.9% Rel / ~7% swirl). Product `v4/classical` and `v4/quantum` remain the pre-orbit inject pair. Details: `v4/archive/orbit_fidelity/NOTES.md`.
-
-### 9.5 What we tried (ω campaign + advantage)
-
+### 6.1 What Reached the ω Gate
 | Approach | Outcome |
 |----------|---------|
 | Pointwise \((u,v)\)+curl, streamfunction, uvpw, wide RFF | Did not hit 2% ω |
 | HarmMLP 96–96, \(k\le 6\) | **1.29%** classical teacher |
-| Distill h48k3 + inject into QNN (v4) | 1.78% / ~2.5× faster — **circuit unused** |
-| Classical distill h48k3 (Control C) | **1.75%** — explains v4 |
-| End-to-end QNN vs matched classical gen (A) | **No advantage** (Q wins 2/6; mean +0.10 pp vs Q) |
-| ν-family generators (B) | Both fail ~33%+ ω |
-| Orbit-gated Rel + swirl | Partial; **not product** |
+| Distill HarmMLP 48–48, \(k\le 3\) | **1.75%** classical / **1.78%** inject |
+| End-to-end QNN vs matched classical generator | No robust advantage |
+| Multi-ν family generators | Both arms ~33%+ ω |
+| Orbit-gated Rel + peak co-rotation | Partial; not promoted |
 
-Reproduce:
-```bash
-.venv/bin/python scripts/exp_quantum_advantage_A.py --arm quantum --n-qubits 8 --n-layers 4 --steps 20000
-.venv/bin/python scripts/exp_quantum_advantage_A.py --arm classical_gen --n-qubits 8 --steps 20000
-```
+Harmonic Fourier features plus an FP32 curl gate on fixed DNS times were decisive. Distillation into a smaller HarmMLP preserves the ≤2% band at higher throughput.
 
-### 9.6 v5 — Taylor–Green return (media)
+### 6.2 Product Checkpoints
+| | Classical teacher | Deployable inject (“quantum” product) |
+|--|-------------------|----------------------------------------|
+| Checkpoint | `checkpoint/v4/classical/` | `checkpoint/v4/quantum/` |
+| Deployed net | HarmMLP 96–96, \(k\le 6\) | HarmMLP 48–48, \(k\le 3\) |
+| Params | 13 347 | 3 795 |
+| ω rel-L2 max | **1.29%** | **1.78%** |
+| Velocity rel-L2 max | 3.75% | 2.95% |
+| Inference (256²) | ~326 Mpts/s | ~829 Mpts/s (**~2.5×**) |
+| Circuit at train / infer | n/a | **Unused** (proj weight zeroed; student copied into bias) |
 
-Stable TGV is a weak stress test (advection cancels into pressure). v5 uses it for **visual** fidelity:
+Control C: classical distill of the same h48k3 hits **1.75%** ω. The “2.5× faster quantum” product story is architecture size, not quantum computation. Full per-time tables: [MODEL_CARD.md](MODEL_CARD.md), `checkpoint/v4/bench.json`.
 
-- Dense \|ω\| (k=2): `checkpoint/v5/media/tgv_dense.gif`
-- Exact \| Classical \| Quantum (k=1): `tgv_triplet.gif`
-- **Unstable:** amplify bottom-left lobe so balance breaks → nonlinear interaction: `v5/unstable/media/tgv_unstable_triplet.gif`
+![Merger snapshots](./checkpoint/v4/media/merger_triplet_snapshots.png)
 
-Not an advantage claim — a demo that PINNs can follow DNS when the exact solution no longer holds.
+*Figure 3: Merger snapshots across gate times for DNS, classical teacher, and deployable student.*
 
-## 10. Optional Fourier-toy figure (optional; merger gif is the hero)
+### 6.3 Fair End-to-End Advantage (Experiment A)
+Protocol: train `ConditionedQuantumGeneratorV2` end-to-end (circuit + projection receive gradients) against `ConditionedClassicalGeneratorV2` at matched qubit / bottleneck width. Both emit weights for the **same** HarmMLP 48–48, \(k\le 3\). Circuit ablation must degrade ω on quantum runs.
 
-Goal: one clean “quantum can do something” plot without claiming PDE superiority.
+Primary matchup (q=8, L=4, bn=64; seeds 0–5):
 
-### Candidate A — Fourier regression (already sketched)
-- Target: \(f(x)=\sin(4x)+\sin(8x)\)
-- Script: `scripts/sanity_vqc_regression.py`
-- Prior run: Q/C ≈ **1.01** (parity) — weak as a “win,” OK as “competitive on Fourier-native toy”
-- [ ] Re-run with fixed seed, report RMSE + params + wall time
-- [ ] Figure: prediction overlay + residual
+| | Quantum generator | Classical generator |
+|--|-------------------|---------------------|
+| Mean ω ± pstdev | 2.325% ± 0.38% | **2.220% ± 0.24%** |
+| Seed wins | 2/6 | **4/6** |
+| Best seed | 1.895% | 1.987% (long classical best **1.823%**) |
 
-### Candidate B — Sample-efficiency story (not run)
-- Same toy or 1D linear PDE; vary # training points
-- Claim shape: “at N points, quantum matches classical” — only if data supports it
+Δ mean **+0.10 pp against quantum**. Bottleneck-16, V1-probs, and long+curl×2 sweeps agree or favor classical. **Verdict: no robust quantum advantage** at matched deployed latency. Scoreboard: `checkpoint/v4/archive/advantage_scoreboard.md`.
 
-### Candidate C — Skip positive figure
-- Pure methodology / negative-result article is still publishable if debugging narrative is strong
+### 6.4 Multi-ν Family (Experiment B)
+DNS family ν∈{0.002…0.02}, hold out ν=0.008. Both quantum and classical generators plateau ~33–50% train ω_mean — not solvers. No advantage claim.
 
-**Recommendation:** Prefer skip for Fourier toy — the **merger gif** (§9) is the positive figure. Do not invent a circuit-in-the-loop PDE win.
+### 6.5 Orbit / Swirl Fidelity
+Pointwise Rel-L2 can pass while vorticity maxima **freeze** (DNS peaks continue to co-rotate). Adding orbital Fourier features \(\sin/\cos(\Omega t)\) with \(\Omega\approx -1.22\) unfroze early motion. Full-horizon swirl ≤5% with Rel≤2% was not achieved in one promoted checkpoint (best compromise ~1.9% Rel / ~7% swirl). Product weights remain the pre-orbit inject pair. Details: `checkpoint/v4/archive/orbit_fidelity/`.
 
----
+## 7. Taylor–Green Media and Unstable Perturbation
 
-## 11. What to put in figures / tables (production checklist)
+Stable 2D TGV is a weak physics stress test: \((u\cdot\nabla)u\) is absorbed into pressure, so the pattern only decays. It remains useful for visual fidelity and for demonstrating solver agreement with an exact solution.
 
-**Hero (shipped):** 1×3 vortex-merger vorticity — DNS | classical | quantum-trained. `blog/checkpoint/v4/media/merger_triplet.gif` (+ snapshots). Gate: FD-curl ω ≤ 2% at listed times. **No tracer particles.**
+![Dense TGV](./checkpoint/v5/media/tgv_dense.gif)
 
-- [x] Fig: merger triplet gif / snapshots (v4)
-- [x] Table: best classical vs quantum — see [MODEL_CARD.md](MODEL_CARD.md)
-- [x] Table: ω-campaign methods — worked vs failed (§0.2, §9)
-- [x] Fig: TGV dense + triplet + unstable (v5)
-- [ ] Fig: experiment ladder (hypernet → Burgers VQC → merger → fair null)
-- [ ] Table: critical bugs + symptom → fix
-- [ ] Fig: Burgers soft-IC collapse vs hard-IC trajectories
-- [ ] Box: “When not to trust PDE residual”
-- [ ] Box: “Quantum-trained ≠ circuit at inference”
+*Figure 4: Dense Taylor–Green \|ω\| (wavenumber k=2) with merger-style deep-blue→yellow colormap.*
 
----
+![TGV triplet](./checkpoint/v5/media/tgv_triplet.gif)
 
-## 11a. Media placement plan (for the published post)
+*Figure 5: Exact | classical | quantum-trained TGV (k=1, v2 polish weights; velocity rel-L2 ≈ 0.61% / 0.62%).*
 
-Keep assets versioned under `blog/checkpoint/`; the article embeds relative paths (or copies into a static `blog/assets/` at publish time).
+Amplifying the bottom-left vortex breaks exact balance and turns nonlinear advection back on. Strong unstable settings: boost ×5.5, ν=0.03, \(T=12\) (~12.1 s @ 10 fps).
 
-| Slot in article | Asset | Path |
-|-----------------|-------|------|
-| **Hero / after thesis** | Merger triplet GIF (DNS \| Classical \| Quantum) | `checkpoint/v4/media/merger_triplet.gif` |
-| Hero still (OG / thumbnail) | Merger snapshots strip | `checkpoint/v4/media/merger_snapshots.png` (or first frame) |
-| Debugging: collapse | Soft-IC Burgers field → near zero (optional still) | regenerate from scout checkpoints |
-| Debugging: TGV polish | Exact vs models at late \(t\) | `checkpoint/v2/media/` |
-| Product metrics callout | Link / inline table | [MODEL_CARD.md](MODEL_CARD.md) |
-| Fair advantage null | Small bar/table (mean ω Q vs C) | numbers from `v4/archive/advantage_scoreboard.md` |
-| Coda: stable TGV beauty | Dense \|ω\| decay | `checkpoint/v5/media/tgv_dense.gif` |
-| Coda: solver comparison | Exact \| Classical \| Quantum | `checkpoint/v5/media/tgv_triplet.gif` |
-| Coda: when balance breaks | Unstable BL-boost triplet | `checkpoint/v5/unstable/media/tgv_unstable_triplet.gif` |
-| Caption footnotes | Per-folder `CAPTION.md` | next to each gif |
+![Unstable TGV triplet](./checkpoint/v5/unstable/media/tgv_unstable_triplet.gif)
 
-**Layout suggestion**
-1. Open with merger gif + one-sentence claim (solver works; QT advantage null).
-2. Mid-article: one bug figure (pressure sign or soft-IC collapse) + hypernetwork null table.
-3. Solver section: model-card table + merger stills.
-4. Close with v5 TGV strip (stable → unstable) as “what the physics looks like,” not as a QC win.
+*Figure 6: Unstable TGV — DNS | classical | quantum. Red + marks the boosted lobe. Classical/quantum trained from scratch on this DNS (soft IC).*
 
-**Do not** put tracer particles on merger gifs; **do** mark the boosted center (`+`) on unstable TGV.
+## 8. Empirical Findings
 
----
+1. **Classical PINNs solve the merger gate.** HarmMLP 96–96 reaches **1.29%** FD-curl ω vs DNS; distilled 48–48 stays inside 2% at ~2.5× inference throughput.
+2. **ν-hypernetwork VQCs lose.** On TGV and Kolmogorov, matched classical generators are more accurate and ~1.8–2× faster to train in wall clock.
+3. **Soft IC produces fake quantum wins.** Hard IC + degeneracy guards reverse the Burgers soft-IC ranking; quantum freezes near the IC.
+4. **Fair e2e quantum generators do not beat matched classical generators** on single-ν merger (Q wins 2/6 seeds; mean favors classical by ~0.10 pp).
+5. **Inject ≠ circuit.** Zeroing the generator projection and copying a distilled student yields a “quantum” checkpoint whose circuit never contributes.
+6. **Pointwise ω ≠ swirl fidelity.** Orbit features help; a Rel≤2% and swirl≤5% product checkpoint was not shipped.
+7. **Simulator cost dominates.** Input-conditioned VQC PINNs are minutes-per-epoch territory at scout scale; classical MLP baselines are milliseconds per step on GPU.
 
-## 12. Recommended conclusion bullets (draft)
+## 9. Conclusion
 
-1. Fair evaluation of quantum PINNs requires matched capacity, fixed holdouts, and **degeneracy checks**.
-2. Several attractive early results were invalidated by physics bugs or trivial solutions (zero field, frozen IC, constant-input generators).
-3. On TGV and Kolmogorov, VQC hypernetworks underperformed matched classical generators (~1.5–2× error, ~2× slower **training**).
-4. On input-conditioned Burgers, soft IC produced a fake quantum win; hard IC showed classical better, quantum frozen near IC.
-5. The **goal that landed** is a PINN PDE solver for 2D vortex merger: HarmMLP vs spectral DNS, FD-curl ω **≤ 2%** (best classical **1.29%**).
-6. Fair end-to-end QNN vs matched classical **generators** (same deployed 48–48 net): **no robust quantum advantage** (Q wins 2/6 seeds; classical mean slightly better).
-7. v4’s “~2.5× faster quantum” result was an **inject/no-op** (proj weight zeroed); classical distill of the same small net matches it (**1.75%** vs **1.78%**).
-8. Orbit/swirl co-rotation remains open: product weights still show frozen late peaks vs DNS.
-9. What worked for the solver: harmonic features, FP32 curl gate, distillation. What did not: claiming quantum advantage from unequal architectures or unused circuits.
+The contribution is a careful negative result on variational quantum circuits inside PINNs for 2D Navier–Stokes, paired with a positive classical PDE product. Under matched capacity, fixed holdouts, and degeneracy checks, VQC hypernetworks and input-conditioned circuits do not beat classical baselines on TGV, Kolmogorov, or Burgers. End-to-end quantum weight generators for vortex merger likewise show no robust advantage at equal deployed latency.
 
----
+What does work is a harmonic-feature PINN against spectral DNS: **1.29%** ω on the classical teacher, **1.78%** on a smaller deployable net with ~2.5× query throughput. That speedup is model size, not quantum compute. The practical lesson for quantum scientific ML is methodological: without hard IC, ablation tests, and architecture-matched controls, it is easy to ship a story the circuit never earned.
 
-## 13. What not to write / common traps
+## References
 
-- [ ] Don’t headline soft-IC Burgers quantum PDE RMS
-- [ ] Don’t compare constant-input generators as “quantum computing”
-- [ ] Don’t claim advantage from equal steps when quantum is 100–800× slower per step
-- [ ] Don’t use TGV alone as “proof of quantum advantage” (too easy / linear)
-- [ ] Don’t promote v2 classical regression as a QC win because quantum matched a *worse* classical
-- [ ] Don’t run 60 h full Burgers VQC without a new architecture that already passes scout
-- [ ] Don’t say the **circuit** is 2.5× faster at PDE queries — the **deployed MLP** is
-- [ ] Don’t treat v3 QT as a speed win (same 13k-param net as classical)
-- [ ] Don’t imply a physics-only PINN; merger training uses DNS
-- [ ] Don’t put tracer particles back on the merger gif (misleading if DNS-only)
+[1] M. Raissi, P. Perdikaris, and G. E. Karniadakis (2019). *Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations*. Journal of Computational Physics, 378, 686–707.
 
----
+[2] G. E. Karniadakis, I. G. Kevrekidis, L. Lu, P. Perdikaris, S. Wang, and L. Yang (2021). *Physics-informed machine learning*. Nature Reviews Physics, 3, 422–440.
 
-## 14. Future experiments (only if continuing research)
+[3] V. Bergholm et al. (2018). *PennyLane: Automatic differentiation of hybrid quantum-classical computations*. arXiv:1811.04968. [https://arxiv.org/abs/1811.04968](https://arxiv.org/abs/1811.04968)
 
-Priority order if the blog needs a follow-up series:
+[4] M. Schuld, A. Bocharov, K. M. Svore, and N. Wiebe (2020). *Circuit-centric quantum classifiers*. Physical Review A, 101, 032308.
 
-1. **Tighten freeze guard** — flag `correction_rms` near frozen-IC residual floor, not only 0.01×ic_rms
-2. **Richer quantum head** — nonlinear MLP on \(\langle Z\rangle\) with ablation vs classical-only head
-3. **Explicit 2nd-harmonic features** in encoding (align circuit with Burgers advection residual)
-4. **1D Burgers or linear heat** with hard IC — smaller, faster conclusive scout
-5. **Sample-efficiency** protocol (vary collocation N at fixed params)
-6. Archive ν-hypernetwork VQC line unless architecture changes fundamentally
-7. Merger follow-ups: physics-only (no DNS collocation) at the 2% ω gate; true circuit-in-the-forward-pass if that is the scientific claim; time-varying \(k_{\max}\) / adaptive width without losing the 0.5 pp budget
+[5] A. Pérez-Salinas, A. Cervera-Lierta, E. Gil-Fuster, and J. I. Latorre (2020). *Data re-uploading for a universal quantum classifier*. Quantum, 4, 226.
 
----
+[6] G. I. Taylor and A. E. Green (1937). *Mechanism of the production of small eddies from large ones*. Proceedings of the Royal Society A, 158, 499–521.
 
-## 15. Repo map (for footnotes / “reproduce”)
-
-| Path | Role |
-|------|------|
-| `pdes/ns2d/EXPERIMENT_ANALYSIS.md` | Full NS measurement notes |
-| `pdes/ns2d/physics_loss.py` | TGV residuals / exact / gauge |
-| `pdes/kolmogorov2d/` | Forced NS Tier C |
-| `pdes/burgers2d/physics_loss.py` | Burgers residual + `ic_values` |
-| `src/qt_pinn/qnn_generator_cond.py` | Conditioned generators v1/v2 |
-| `src/qt_pinn/burgers_vqc_pinn.py` | Input-conditioned VQC + matched classical |
-| `docs/PLAN_TGV_DEMO.md` | 3-panel TGV animation + quality-model plan |
-| `scripts/train_ns_parametric.py` | TGV family |
-| `scripts/train_kol_parametric.py` | Kolmogorov family |
-| `scripts/train_burgers_vqc.py` | Burgers scout/full |
-| `scripts/compare_*.py` | Side-by-side verdicts |
-| `scripts/sanity_vqc_regression.py` | Fourier toy |
-| `scripts/train_vortex_merger.py` | Merger PINN training entry |
-| `scripts/exp_merger_omega.py` | HarmMLP, FD-curl gate, v3 media |
-| `scripts/train_merger_qt_fast.py` | v4 distill + inject |
-| `scripts/bench_merger.py` | Classical vs QT throughput / ω |
-| `scripts/regenerate_v4_media.py` | v4 gif + snapshots (no tracers) |
-| `blog/checkpoint/v3/` | DNS + matched-size classical/QT |
-| `blog/checkpoint/v4/` | Product + bench + media; fair-advantage/orbit under `archive/` |
-| `blog/checkpoint/v5/` | TGV dense / triplet / unstable media |
-| `blog/MODEL_CARD.md` | Best classical & quantum metrics |
-
-### Reproduce Burgers scout
-```bash
-.venv/bin/python scripts/train_burgers_vqc.py --model classical --seed 0 --run-id burg_vqc_c_scout
-.venv/bin/python scripts/train_burgers_vqc.py --model quantum  --seed 0 --run-id burg_vqc_q_scout
-.venv/bin/python scripts/compare_burgers_vqc.py checkpoints/burg_vqc_c_scout checkpoints/burg_vqc_q_scout
-```
-
-### Key checkpoints
-| ID | Role |
-|----|------|
-| `ns_direct_a3` | Classical NS works |
-| `ns_par_c_s0` / `ns_par_q_s0` | Best TGV classical; quantum extrap fail |
-| `ns_par_*_v2_s0` | Expect/log redesign |
-| `kol_direct_s0`, `kol_par_c_s0`, `kol_par_q_s0` | Forced NS null |
-| `burg_vqc_c_scout`, `burg_vqc_q_scout` | Hard-IC Burgers null (valid) |
-| Soft-IC Burgers scouts | **Discarded / invalid** — collapse |
-| `blog/checkpoint/v3/classical` | Merger HarmMLP 96–96 (1.29% ω) |
-| `blog/checkpoint/v4/classical` | Same teacher (product) |
-| `blog/checkpoint/v4/quantum` | Fast HarmMLP 48–48 inject (~2.5×; circuit unused) |
-| `blog/checkpoint/v4/archive/advantage_*` | Fair e2e null |
-| `blog/checkpoint/v5/unstable/` | Strong BL-boost TGV triplet |
-
----
-
-## 16. Open writing TODOs for the author
-
-- [ ] Choose final title
-- [ ] Write intro narrative (problem → failed VQC paths → working merger solver)
-- [ ] Lead with merger solver + v4 speed; keep Burgers/TGV as “how we almost shipped a fake win”
-- [ ] Decide how much of the hypernetwork era to keep vs compress
-- [ ] Compress Tier B/C tables for readability (one “hypernetwork era” figure)
-- [ ] Draft “how to evaluate quantum PINNs” box from §4
-- [ ] Add author bio / disclosure (simulator-only; no hardware)
-- [ ] Cite PennyLane, PINN literature, related QC-for-PDE papers (fair related work)
-- [ ] Proofread that no soft-IC Burgers number appears as a success
-
----
-
-## 17. Changelog of this document
-
-| Date | Note |
-|------|------|
-| 2026-08-24 | Initial structure from experiment log + Burgers hard-IC scout + blog strategy notes |
-| 2026-08-25 | Added §9 vortex-merger PDE solver (v3 2% ω gate, v4 ~2.5× QT inference); updated thesis/conclusion so they match shipped checkpoints |
-| 2026-08-26 | Corrected fair-advantage thesis to **null**; added §0.1–0.2 status + worked/failed; orbit close-out; v5 TGV + unstable media plan (§11a); linked [MODEL_CARD.md](MODEL_CARD.md) |
-
-*Last evidence cutoff: merger v4 product + fair-advantage archive, Burgers hard-IC scout, NS Tiers 0–C, v5 TGV media. Product status: working DNS-gated merger PINN; no robust quantum advantage; orbit fidelity not promoted.*
+[7] Checkpoints and metrics for this work: [MODEL_CARD.md](MODEL_CARD.md), `checkpoint/v4/bench.json`, `checkpoint/v4/archive/advantage_scoreboard.md`.

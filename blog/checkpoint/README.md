@@ -11,7 +11,7 @@ Each `vN/` is self-contained (models + media) unless noted.
 | `v5/` | TGV return: dense \|ω\|, Exact\|Classical\|Quantum triplet, **unstable** BL-boost triplet |
 
 **Model card (best metrics):** [`../MODEL_CARD.md`](../MODEL_CARD.md)  
-**Narrative draft:** [`../blog.md`](../blog.md)
+**Article:** [`../blog.md`](../blog.md)
 
 v4 quantum (historical inject):
 ```bash
