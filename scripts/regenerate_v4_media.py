@@ -293,7 +293,7 @@ def main() -> None:
             axes[row, -1].collections[0], ax=axes[row, :].tolist(),
             fraction=0.046, pad=0.02, label="ω",
         )
-    fig.suptitle("Vortex merger ω (red + = ω peaks of that panel)")
+    fig.suptitle(r"$\omega$ snapshots (red + = vortex relative maxima)")
     fig.savefig(media / "merger_triplet_snapshots.png", dpi=150)
     plt.close(fig)
     print(f"Wrote {media / 'merger_triplet_snapshots.png'}", flush=True)
@@ -312,7 +312,7 @@ def main() -> None:
                 axes[-1].collections[0], ax=axes.tolist(),
                 fraction=0.046, pad=0.02, label="ω",
             )
-            fig.suptitle(f"{_phase(tv)}    t = {tv:.2f} / {T_END:.0f}")
+            fig.suptitle(f"Co-rotating vortices    t = {tv:.2f} / {T_END:.0f}")
             fig.savefig(tmp / f"frame_{fi:04d}.png", dpi=110)
             plt.close(fig)
             if fi % 50 == 0:

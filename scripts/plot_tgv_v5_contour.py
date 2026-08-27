@@ -156,7 +156,7 @@ def write_exact_gif(
             ax.set_xticks([])
             ax.set_yticks([])
             ax.set_title(
-                rf"TGV $|\omega|$  $k={k:g}$  $\nu={nu:g}$  $t={t:.1f}$",
+                rf"Taylor–Green Vortex $|\omega|$  $k={k:g}$  $\nu={nu:g}$  $t={t:.1f}$",
                 fontsize=13,
             )
             fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03, label=r"$|\omega|$")
@@ -175,11 +175,11 @@ def write_triplet_gif(
     dpi: int,
     out: Path,
     device: torch.device,
-    t_end: float = 15.0,
+    t_end: float = 5.0,
     dt: float = 0.1,
     fps: int = 10,
 ) -> int:
-    """Exact | Classical | Quantum side-by-side (k=1 — v2 PINN training mode)."""
+    """Exact | Classical | Quantum (k=1). Default t_end=5 matches v2 t_max."""
     classical, _ = load_classical(V2 / "classical", device)
     quantum, qw, _ = load_quantum(V2 / "quantum", device)
     xs = np.linspace(X_LO, X_HI, n)
@@ -247,7 +247,7 @@ def plot_snapshots(
         ax.set_title(rf"$t={t:g}$", fontsize=11)
     fig.colorbar(im, ax=axes.tolist(), fraction=0.02, pad=0.02, label=r"$|\omega|$")
     fig.suptitle(
-        rf"TGV $|\omega|$  $k={k:g}$, $\nu={nu:g}$  ({int(k)*2}×{int(k)*2} lobes)",
+        rf"Taylor–Green Vortex $|\omega|$  $k={k:g}$, $\nu={nu:g}$  ({int(k)*2}×{int(k)*2} lobes)",
         fontsize=13,
     )
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -282,7 +282,7 @@ def plot_triplet_still(
         ax.set_yticks([])
         ax.set_title(title, fontsize=13)
     fig.colorbar(im, ax=axes.tolist(), fraction=0.025, pad=0.02, label=r"$|\omega|$")
-    fig.suptitle(rf"TGV $|\omega|$  $\nu={nu:g}$, $t={t:g}$", fontsize=14)
+    fig.suptitle(rf"Taylor–Green Vortex $|\omega|$  $\nu={nu:g}$, $t={t:g}$", fontsize=14)
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=dpi, bbox_inches="tight", facecolor="white")
     plt.close(fig)
@@ -333,6 +333,8 @@ def main() -> None:
     ap.add_argument("--gif-dpi", type=int, default=110)
     ap.add_argument("--nu", type=float, default=0.1)
     ap.add_argument("--fps", type=int, default=10)
+    ap.add_argument("--t-end", type=float, default=5.0,
+                    help="triplet GIF end time (v2 models use t_max=5)")
     ap.add_argument("--device", default="cpu")
     args = ap.parse_args()
 
@@ -367,6 +369,7 @@ def main() -> None:
         n_trip = write_triplet_gif(
             n=min(args.gif_n, 320), nu=args.nu, dpi=args.gif_dpi,
             out=media / "tgv_triplet.gif", device=device, fps=args.fps,
+            t_end=args.t_end,
         )
 
     (media / "CAPTION.md").write_text(

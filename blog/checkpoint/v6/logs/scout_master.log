@@ -1,0 +1,302 @@
+[v6] classical_gen sweep N={512 1024 2048 4096} seed=0 steps=12000
+=== classical_gen N=512 ===
+=== v6 classical_gen  N=512 seed=0 steps=12000 q=8 L=4 bn=64 ===
+classical_gen N=512      0/12000  loss=407.4467  ω=106.55%  ω_hi=90.11%  vel=102.37%  [0s]
+classical_gen N=512    500/12000  loss=2.5334  ω=16.68%  ω_hi=16.15%  vel=6.54%  [3s]
+classical_gen N=512   1000/12000  loss=1.6049  ω=17.00%  ω_hi=16.09%  vel=6.38%  [5s]
+classical_gen N=512   1500/12000  loss=5.4770  ω=13.26%  ω_hi=12.97%  vel=4.93%  [8s]
+classical_gen N=512   2000/12000  loss=2.0656  ω=12.58%  ω_hi=11.67%  vel=4.31%  [10s]
+classical_gen N=512   2500/12000  loss=1.2401  ω=12.79%  ω_hi=11.16%  vel=5.19%  [13s]
+classical_gen N=512   3000/12000  loss=3.7497  ω=12.74%  ω_hi=11.00%  vel=3.73%  [15s]
+classical_gen N=512   3500/12000  loss=1.2739  ω=11.96%  ω_hi=10.62%  vel=3.21%  [18s]
+classical_gen N=512   4000/12000  loss=1.1262  ω=11.58%  ω_hi=9.99%  vel=3.63%  [20s]
+classical_gen N=512   4500/12000  loss=2.9074  ω=10.61%  ω_hi=9.03%  vel=3.23%  [23s]
+classical_gen N=512   5000/12000  loss=1.7096  ω=10.24%  ω_hi=8.85%  vel=3.24%  [25s]
+classical_gen N=512   5500/12000  loss=1.4686  ω=9.62%  ω_hi=8.19%  vel=3.59%  [28s]
+classical_gen N=512   6000/12000  loss=2.2439  ω=9.31%  ω_hi=7.85%  vel=3.09%  [30s]
+classical_gen N=512   6500/12000  loss=1.2385  ω=8.43%  ω_hi=7.06%  vel=3.13%  [33s]
+classical_gen N=512   7000/12000  loss=1.6269  ω=7.80%  ω_hi=6.54%  vel=2.96%  [35s]
+classical_gen N=512   7500/12000  loss=2.0073  ω=7.44%  ω_hi=6.00%  vel=2.88%  [38s]
+classical_gen N=512   8000/12000  loss=1.4612  ω=6.98%  ω_hi=5.74%  vel=2.92%  [40s]
+classical_gen N=512   8500/12000  loss=1.1448  ω=6.43%  ω_hi=5.25%  vel=2.89%  [43s]
+classical_gen N=512   9000/12000  loss=1.1107  ω=5.99%  ω_hi=4.83%  vel=2.87%  [45s]
+classical_gen N=512   9500/12000  loss=0.9476  ω=5.72%  ω_hi=4.62%  vel=2.74%  [48s]
+classical_gen N=512  10000/12000  loss=0.7581  ω=5.58%  ω_hi=4.53%  vel=2.68%  [50s]
+classical_gen N=512  10500/12000  loss=1.4993  ω=5.68%  ω_hi=4.60%  vel=2.64%  [53s]
+classical_gen N=512  11000/12000  loss=1.1805  ω=5.68%  ω_hi=4.59%  vel=2.62%  [55s]
+classical_gen N=512  11500/12000  loss=1.4256  ω=5.76%  ω_hi=4.66%  vel=2.62%  [58s]
+classical_gen N=512  11999/12000  loss=0.7835  ω=5.82%  ω_hi=4.71%  vel=2.61%  [60s]
+DONE classical_gen N=512  ω=5.58%  ω_hi=4.53%  [60.5s]  → /home/mozer/qt-pinn/blog/checkpoint/v6/sample_eff/N512_s0/classical_gen
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (1 rows)
+=== classical_gen N=1024 ===
+=== v6 classical_gen  N=1024 seed=0 steps=12000 q=8 L=4 bn=64 ===
+classical_gen N=1024      0/12000  loss=403.3878  ω=102.89%  ω_hi=88.82%  vel=102.07%  [0s]
+classical_gen N=1024    500/12000  loss=2.8385  ω=16.28%  ω_hi=15.93%  vel=5.95%  [3s]
+classical_gen N=1024   1000/12000  loss=1.8231  ω=15.65%  ω_hi=15.04%  vel=6.02%  [6s]
+classical_gen N=1024   1500/12000  loss=5.3373  ω=13.93%  ω_hi=12.25%  vel=5.15%  [8s]
+classical_gen N=1024   2000/12000  loss=1.9616  ω=12.61%  ω_hi=11.25%  vel=4.28%  [11s]
+classical_gen N=1024   2500/12000  loss=1.6473  ω=12.60%  ω_hi=11.24%  vel=4.49%  [13s]
+classical_gen N=1024   3000/12000  loss=3.8158  ω=12.28%  ω_hi=10.44%  vel=4.07%  [15s]
+classical_gen N=1024   3500/12000  loss=1.3876  ω=11.73%  ω_hi=10.46%  vel=3.31%  [18s]
+classical_gen N=1024   4000/12000  loss=1.2935  ω=11.17%  ω_hi=9.85%  vel=4.15%  [21s]
+classical_gen N=1024   4500/12000  loss=2.8784  ω=10.59%  ω_hi=9.08%  vel=3.78%  [23s]
+classical_gen N=1024   5000/12000  loss=1.9738  ω=9.62%  ω_hi=8.23%  vel=3.84%  [26s]
+classical_gen N=1024   5500/12000  loss=1.3540  ω=9.31%  ω_hi=8.05%  vel=4.14%  [28s]
+classical_gen N=1024   6000/12000  loss=1.8962  ω=9.37%  ω_hi=7.80%  vel=4.15%  [31s]
+classical_gen N=1024   6500/12000  loss=1.5387  ω=8.25%  ω_hi=6.96%  vel=3.79%  [33s]
+classical_gen N=1024   7000/12000  loss=1.2242  ω=7.59%  ω_hi=6.36%  vel=3.91%  [35s]
+classical_gen N=1024   7500/12000  loss=1.9559  ω=7.26%  ω_hi=6.01%  vel=3.88%  [38s]
+classical_gen N=1024   8000/12000  loss=1.4256  ω=6.52%  ω_hi=5.33%  vel=3.81%  [40s]
+classical_gen N=1024   8500/12000  loss=1.1205  ω=6.00%  ω_hi=4.89%  vel=3.60%  [43s]
+classical_gen N=1024   9000/12000  loss=1.0388  ω=5.52%  ω_hi=4.41%  vel=3.73%  [45s]
+classical_gen N=1024   9500/12000  loss=0.9576  ω=5.16%  ω_hi=4.12%  vel=3.63%  [48s]
+classical_gen N=1024  10000/12000  loss=0.8842  ω=5.02%  ω_hi=4.04%  vel=3.66%  [50s]
+classical_gen N=1024  10500/12000  loss=1.2859  ω=4.97%  ω_hi=4.01%  vel=3.60%  [53s]
+classical_gen N=1024  11000/12000  loss=1.1606  ω=5.06%  ω_hi=4.05%  vel=3.59%  [55s]
+classical_gen N=1024  11500/12000  loss=1.1274  ω=5.13%  ω_hi=4.13%  vel=3.53%  [58s]
+classical_gen N=1024  11999/12000  loss=0.9588  ω=5.16%  ω_hi=4.15%  vel=3.53%  [61s]
+DONE classical_gen N=1024  ω=4.97%  ω_hi=4.01%  [60.7s]  → /home/mozer/qt-pinn/blog/checkpoint/v6/sample_eff/N1024_s0/classical_gen
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (2 rows)
+=== classical_gen N=2048 ===
+=== v6 classical_gen  N=2048 seed=0 steps=12000 q=8 L=4 bn=64 ===
+classical_gen N=2048      0/12000  loss=406.5053  ω=103.11%  ω_hi=88.33%  vel=102.23%  [0s]
+classical_gen N=2048    500/12000  loss=2.9159  ω=17.01%  ω_hi=16.63%  vel=6.34%  [3s]
+classical_gen N=2048   1000/12000  loss=1.5230  ω=17.25%  ω_hi=16.62%  vel=6.25%  [6s]
+classical_gen N=2048   1500/12000  loss=5.3902  ω=13.72%  ω_hi=13.45%  vel=5.14%  [8s]
+classical_gen N=2048   2000/12000  loss=2.1189  ω=12.58%  ω_hi=12.25%  vel=4.32%  [11s]
+classical_gen N=2048   2500/12000  loss=1.1984  ω=12.94%  ω_hi=11.29%  vel=4.56%  [13s]
+classical_gen N=2048   3000/12000  loss=3.8728  ω=13.00%  ω_hi=11.47%  vel=3.82%  [16s]
+classical_gen N=2048   3500/12000  loss=1.4356  ω=12.37%  ω_hi=11.03%  vel=3.61%  [19s]
+classical_gen N=2048   4000/12000  loss=1.3166  ω=11.55%  ω_hi=10.22%  vel=3.87%  [21s]
+classical_gen N=2048   4500/12000  loss=3.1276  ω=10.63%  ω_hi=9.12%  vel=3.76%  [24s]
+classical_gen N=2048   5000/12000  loss=1.5468  ω=9.69%  ω_hi=8.23%  vel=3.75%  [27s]
+classical_gen N=2048   5500/12000  loss=1.0534  ω=9.25%  ω_hi=8.00%  vel=3.80%  [29s]
+classical_gen N=2048   6000/12000  loss=1.8208  ω=8.72%  ω_hi=7.38%  vel=3.68%  [32s]
+classical_gen N=2048   6500/12000  loss=1.7588  ω=8.18%  ω_hi=6.65%  vel=3.68%  [34s]
+classical_gen N=2048   7000/12000  loss=1.3073  ω=7.36%  ω_hi=6.13%  vel=3.26%  [37s]
+classical_gen N=2048   7500/12000  loss=2.1806  ω=6.95%  ω_hi=5.73%  vel=3.32%  [40s]
+classical_gen N=2048   8000/12000  loss=1.4720  ω=6.29%  ω_hi=5.16%  vel=3.35%  [43s]
+classical_gen N=2048   8500/12000  loss=1.2020  ω=5.79%  ω_hi=4.74%  vel=3.17%  [45s]
+classical_gen N=2048   9000/12000  loss=1.3763  ω=5.57%  ω_hi=4.55%  vel=3.49%  [48s]
+classical_gen N=2048   9500/12000  loss=1.0813  ω=5.14%  ω_hi=4.21%  vel=3.34%  [50s]
+classical_gen N=2048  10000/12000  loss=1.0434  ω=5.07%  ω_hi=4.13%  vel=3.25%  [53s]
+classical_gen N=2048  10500/12000  loss=1.1896  ω=5.31%  ω_hi=4.33%  vel=3.28%  [55s]
+classical_gen N=2048  11000/12000  loss=1.0982  ω=5.50%  ω_hi=4.47%  vel=3.29%  [58s]
+classical_gen N=2048  11500/12000  loss=1.0569  ω=5.58%  ω_hi=4.55%  vel=3.29%  [60s]
+classical_gen N=2048  11999/12000  loss=0.8717  ω=5.65%  ω_hi=4.61%  vel=3.28%  [63s]
+DONE classical_gen N=2048  ω=5.07%  ω_hi=4.13%  [62.9s]  → /home/mozer/qt-pinn/blog/checkpoint/v6/sample_eff/N2048_s0/classical_gen
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (3 rows)
+=== classical_gen N=4096 ===
+=== v6 classical_gen  N=4096 seed=0 steps=12000 q=8 L=4 bn=64 ===
+classical_gen N=4096      0/12000  loss=412.0585  ω=102.87%  ω_hi=87.71%  vel=101.65%  [0s]
+classical_gen N=4096    500/12000  loss=2.6314  ω=16.86%  ω_hi=16.28%  vel=6.15%  [3s]
+classical_gen N=4096   1000/12000  loss=1.8537  ω=16.25%  ω_hi=15.60%  vel=6.07%  [5s]
+classical_gen N=4096   1500/12000  loss=5.2765  ω=13.35%  ω_hi=13.05%  vel=5.00%  [8s]
+classical_gen N=4096   2000/12000  loss=1.9325  ω=12.62%  ω_hi=11.61%  vel=4.41%  [11s]
+classical_gen N=4096   2500/12000  loss=1.7346  ω=12.85%  ω_hi=11.65%  vel=4.62%  [14s]
+classical_gen N=4096   3000/12000  loss=3.5934  ω=13.34%  ω_hi=11.46%  vel=3.79%  [17s]
+classical_gen N=4096   3500/12000  loss=1.7465  ω=11.56%  ω_hi=10.22%  vel=3.97%  [20s]
+classical_gen N=4096   4000/12000  loss=1.2484  ω=11.43%  ω_hi=9.90%  vel=3.92%  [23s]
+classical_gen N=4096   4500/12000  loss=2.6112  ω=10.69%  ω_hi=9.45%  vel=3.33%  [25s]
+classical_gen N=4096   5000/12000  loss=1.6541  ω=9.50%  ω_hi=7.98%  vel=3.27%  [28s]
+classical_gen N=4096   5500/12000  loss=1.1416  ω=9.25%  ω_hi=7.80%  vel=3.40%  [31s]
+classical_gen N=4096   6000/12000  loss=2.1347  ω=8.84%  ω_hi=7.51%  vel=3.24%  [34s]
+classical_gen N=4096   6500/12000  loss=1.4033  ω=7.81%  ω_hi=6.42%  vel=2.92%  [37s]
+classical_gen N=4096   7000/12000  loss=1.1342  ω=7.20%  ω_hi=5.81%  vel=2.99%  [40s]
+classical_gen N=4096   7500/12000  loss=1.8215  ω=6.85%  ω_hi=5.43%  vel=2.99%  [43s]
+classical_gen N=4096   8000/12000  loss=1.3376  ω=6.15%  ω_hi=4.97%  vel=2.93%  [45s]
+classical_gen N=4096   8500/12000  loss=1.1666  ω=5.62%  ω_hi=4.49%  vel=2.91%  [48s]
+classical_gen N=4096   9000/12000  loss=1.4892  ω=5.05%  ω_hi=4.08%  vel=2.84%  [51s]
+classical_gen N=4096   9500/12000  loss=1.2793  ω=4.61%  ω_hi=3.67%  vel=2.81%  [54s]
+classical_gen N=4096  10000/12000  loss=0.9842  ω=4.38%  ω_hi=3.53%  vel=2.82%  [56s]
+classical_gen N=4096  10500/12000  loss=1.3159  ω=4.32%  ω_hi=3.47%  vel=2.78%  [59s]
+classical_gen N=4096  11000/12000  loss=1.2861  ω=4.31%  ω_hi=3.44%  vel=2.74%  [62s]
+classical_gen N=4096  11500/12000  loss=1.1118  ω=4.35%  ω_hi=3.49%  vel=2.72%  [65s]
+classical_gen N=4096  11999/12000  loss=1.0451  ω=4.40%  ω_hi=3.53%  vel=2.70%  [68s]
+DONE classical_gen N=4096  ω=4.31%  ω_hi=3.44%  [67.8s]  → /home/mozer/qt-pinn/blog/checkpoint/v6/sample_eff/N4096_s0/classical_gen
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (4 rows)
+[v6] quantum sweep N={512 1024 2048 4096} seed=0 steps=12000
+=== quantum N=512 ===
+=== v6 quantum  N=512 seed=0 steps=12000 q=8 L=4 bn=64 ===
+quantum N=512      0/12000  loss=393.0339  ω=99.14%  ω_hi=91.08%  vel=95.20%  [1s]
+quantum N=512    500/12000  loss=2.7124  ω=16.33%  ω_hi=15.76%  vel=7.20%  [14s]
+quantum N=512   1000/12000  loss=1.6203  ω=16.28%  ω_hi=15.15%  vel=7.07%  [27s]
+quantum N=512   1500/12000  loss=5.4898  ω=13.30%  ω_hi=12.74%  vel=5.90%  [40s]
+quantum N=512   2000/12000  loss=2.1851  ω=12.86%  ω_hi=11.74%  vel=4.38%  [54s]
+quantum N=512   2500/12000  loss=1.3221  ω=12.32%  ω_hi=10.67%  vel=4.56%  [67s]
+quantum N=512   3000/12000  loss=3.8242  ω=12.02%  ω_hi=10.47%  vel=4.62%  [80s]
+quantum N=512   3500/12000  loss=1.4847  ω=11.06%  ω_hi=9.70%  vel=3.33%  [94s]
+quantum N=512   4000/12000  loss=1.1602  ω=10.50%  ω_hi=9.09%  vel=3.92%  [107s]
+quantum N=512   4500/12000  loss=3.2671  ω=10.48%  ω_hi=8.85%  vel=3.83%  [121s]
+quantum N=512   5000/12000  loss=1.7923  ω=9.46%  ω_hi=8.01%  vel=3.32%  [134s]
+quantum N=512   5500/12000  loss=1.5171  ω=9.09%  ω_hi=7.61%  vel=3.61%  [147s]
+scripts/run_v6_sample_eff_scout.sh: line 23: 1550196 Segmentation fault      (core dumped) "$PY" -u scripts/exp_v6_pareto.py --arm quantum --n-colloc "$N" --seed "$SEED" --steps "$STEPS" 2>&1
+     1550197 Done                    | tee "$LOG/quantum_N${N}_s${SEED}.log"
+[v6] quantum sweep N={512 1024 2048 4096} seed=0 steps=12000
+=== quantum N=512 (attempt 1/3) ===
+=== v6 quantum  N=512 seed=0 steps=12000 q=8 L=4 bn=64 ===
+quantum N=512      0/12000  ω=99.05%  ω_hi=91.05%  vel=95.20%  [0s]
+quantum N=512   1000/12000  ω=16.30%  ω_hi=15.13%  vel=7.07%  [26s]
+quantum N=512   2000/12000  ω=12.86%  ω_hi=11.73%  vel=4.38%  [52s]
+quantum N=512   3000/12000  ω=12.03%  ω_hi=10.48%  vel=4.62%  [78s]
+quantum N=512   4000/12000  ω=10.53%  ω_hi=9.12%  vel=3.92%  [104s]
+quantum N=512   5000/12000  ω=9.50%  ω_hi=8.05%  vel=3.32%  [129s]
+quantum N=512   6000/12000  ω=8.72%  ω_hi=7.38%  vel=3.53%  [155s]
+quantum N=512   7000/12000  ω=7.48%  ω_hi=6.07%  vel=2.97%  [181s]
+quantum N=512   8000/12000  ω=6.67%  ω_hi=5.48%  vel=3.11%  [207s]
+quantum N=512   9000/12000  ω=5.89%  ω_hi=4.73%  vel=3.07%  [233s]
+quantum N=512  10000/12000  ω=5.57%  ω_hi=4.55%  vel=2.98%  [258s]
+quantum N=512  11000/12000  ω=5.66%  ω_hi=4.63%  vel=2.93%  [284s]
+quantum N=512  11999/12000  ω=5.81%  ω_hi=4.75%  vel=2.90%  [310s]
+Traceback (most recent call last):
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 565, in <module>
+    main()
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 498, in main
+    ablation = verify_circuit_usage(gen, target, dns_g, device, nu)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 280, in verify_circuit_usage
+    rand_q = eval_fields_panel(
+             ^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 95, in eval_fields_panel
+    pred = predict_fn(x, y, t)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 281, in <lambda>
+    lambda a, b, c: make_pred("random_q")(a, b, c).detach(), dns_g, device, step=1
+                    ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 269, in make_pred
+    w = quantum_forward_ablated(gen, nu_t, mode)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_quantum_advantage_A.py", line 109, in quantum_forward_ablated
+    feat_dim = int(getattr(gen, "feat_dim", getattr(gen, "n_states")))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1967, in __getattr__
+    raise AttributeError(
+AttributeError: 'ConditionedQuantumGeneratorV2' object has no attribute 'n_states'
+[warn] quantum N=512 exited rc=1 (segfault=139). retrying…
+=== quantum N=512 (attempt 2/3) ===
+=== v6 quantum  N=512 seed=0 steps=12000 q=8 L=4 bn=64 ===
+quantum N=512      0/12000  ω=99.05%  ω_hi=91.05%  vel=95.20%  [0s]
+quantum N=512   1000/12000  ω=16.30%  ω_hi=15.13%  vel=7.07%  [26s]
+quantum N=512   2000/12000  ω=12.86%  ω_hi=11.73%  vel=4.38%  [51s]
+quantum N=512   3000/12000  ω=12.03%  ω_hi=10.48%  vel=4.62%  [76s]
+quantum N=512   4000/12000  ω=10.53%  ω_hi=9.12%  vel=3.92%  [102s]
+quantum N=512   5000/12000  ω=9.50%  ω_hi=8.05%  vel=3.32%  [127s]
+quantum N=512   6000/12000  ω=8.72%  ω_hi=7.38%  vel=3.53%  [152s]
+quantum N=512   7000/12000  ω=7.48%  ω_hi=6.07%  vel=2.97%  [177s]
+quantum N=512   8000/12000  ω=6.67%  ω_hi=5.48%  vel=3.11%  [202s]
+quantum N=512   9000/12000  ω=5.89%  ω_hi=4.73%  vel=3.07%  [227s]
+quantum N=512  10000/12000  ω=5.57%  ω_hi=4.55%  vel=2.98%  [252s]
+quantum N=512  11000/12000  ω=5.66%  ω_hi=4.63%  vel=2.93%  [277s]
+quantum N=512  11999/12000  ω=5.81%  ω_hi=4.75%  vel=2.90%  [302s]
+Traceback (most recent call last):
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 565, in <module>
+    main()
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 498, in main
+    ablation = verify_circuit_usage(gen, target, dns_g, device, nu)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 280, in verify_circuit_usage
+    rand_q = eval_fields_panel(
+             ^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 95, in eval_fields_panel
+    pred = predict_fn(x, y, t)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 281, in <lambda>
+    lambda a, b, c: make_pred("random_q")(a, b, c).detach(), dns_g, device, step=1
+                    ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_v6_pareto.py", line 269, in make_pred
+    w = quantum_forward_ablated(gen, nu_t, mode)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/scripts/exp_quantum_advantage_A.py", line 109, in quantum_forward_ablated
+    feat_dim = int(getattr(gen, "feat_dim", getattr(gen, "n_states")))
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mozer/qt-pinn/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1967, in __getattr__
+    raise AttributeError(
+AttributeError: 'ConditionedQuantumGeneratorV2' object has no attribute 'n_states'
+[warn] quantum N=512 exited rc=1 (segfault=139). retrying…
+=== quantum N=512 (attempt 3/3) ===
+=== v6 quantum  N=512 seed=0 steps=12000 q=8 L=4 bn=64 ===
+quantum N=512      0/12000  ω=99.05%  ω_hi=91.05%  vel=95.20%  [0s]
+quantum N=512   1000/12000  ω=16.30%  ω_hi=15.13%  vel=7.07%  [26s]
+quantum N=512   2000/12000  ω=12.86%  ω_hi=11.73%  vel=4.38%  [52s]
+quantum N=512   3000/12000  ω=12.03%  ω_hi=10.48%  vel=4.62%  [77s]
+[v6] quantum sweep N={512 1024 2048 4096} seed=0 steps=12000
+=== quantum N=512 (attempt 1/3) ===
+=== v6 quantum  N=512 seed=0 steps=12000 q=8 L=4 bn=64 ===
+quantum N=512      0/12000  ω=99.05%  ω_hi=91.05%  vel=95.20%  [0s]
+quantum N=512   1000/12000  ω=16.30%  ω_hi=15.13%  vel=7.07%  [28s]
+quantum N=512   2000/12000  ω=12.86%  ω_hi=11.73%  vel=4.38%  [54s]
+quantum N=512   3000/12000  ω=12.03%  ω_hi=10.48%  vel=4.62%  [81s]
+quantum N=512   4000/12000  ω=10.53%  ω_hi=9.12%  vel=3.92%  [108s]
+quantum N=512   5000/12000  ω=9.50%  ω_hi=8.05%  vel=3.32%  [134s]
+quantum N=512   6000/12000  ω=8.72%  ω_hi=7.38%  vel=3.53%  [161s]
+quantum N=512   7000/12000  ω=7.48%  ω_hi=6.07%  vel=2.97%  [188s]
+quantum N=512   8000/12000  ω=6.67%  ω_hi=5.48%  vel=3.11%  [215s]
+quantum N=512   9000/12000  ω=5.89%  ω_hi=4.73%  vel=3.07%  [242s]
+quantum N=512  10000/12000  ω=5.57%  ω_hi=4.55%  vel=2.98%  [269s]
+quantum N=512  11000/12000  ω=5.66%  ω_hi=4.63%  vel=2.93%  [295s]
+quantum N=512  11999/12000  ω=5.81%  ω_hi=4.75%  vel=2.90%  [323s]
+ablation used=True  Δrand=16.891pp  Δzero=31.164pp
+DONE quantum N=512  ω=5.50%  ω_hi=4.48%  [322.8s]  → /home/mozer/qt-pinn/blog/checkpoint/v6/sample_eff/N512_s0/quantum
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (5 rows)
+=== quantum N=1024 (attempt 1/3) ===
+=== v6 quantum  N=1024 seed=0 steps=12000 q=8 L=4 bn=64 ===
+quantum N=1024      0/12000  ω=98.78%  ω_hi=89.37%  vel=95.03%  [0s]
+quantum N=1024   1000/12000  ω=14.84%  ω_hi=13.98%  vel=6.66%  [26s]
+quantum N=1024   2000/12000  ω=12.82%  ω_hi=11.47%  vel=4.54%  [51s]
+quantum N=1024   3000/12000  ω=12.60%  ω_hi=11.52%  vel=4.69%  [76s]
+quantum N=1024   4000/12000  ω=10.45%  ω_hi=8.90%  vel=3.81%  [102s]
+quantum N=1024   5000/12000  ω=9.26%  ω_hi=7.68%  vel=3.44%  [127s]
+quantum N=1024   6000/12000  ω=8.54%  ω_hi=7.03%  vel=3.13%  [152s]
+quantum N=1024   7000/12000  ω=7.35%  ω_hi=6.10%  vel=3.02%  [177s]
+quantum N=1024   8000/12000  ω=6.21%  ω_hi=5.06%  vel=2.84%  [202s]
+quantum N=1024   9000/12000  ω=5.34%  ω_hi=4.29%  vel=2.83%  [228s]
+quantum N=1024  10000/12000  ω=4.74%  ω_hi=3.88%  vel=2.81%  [253s]
+quantum N=1024  11000/12000  ω=4.70%  ω_hi=3.83%  vel=2.81%  [278s]
+quantum N=1024  11999/12000  ω=4.81%  ω_hi=3.93%  vel=2.81%  [303s]
+ablation used=True  Δrand=14.477pp  Δzero=26.940pp
+DONE quantum N=1024  ω=4.61%  ω_hi=3.75%  [303.4s]  → /home/mozer/qt-pinn/blog/checkpoint/v6/sample_eff/N1024_s0/quantum
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (6 rows)
+=== quantum N=2048 (attempt 1/3) ===
+=== v6 quantum  N=2048 seed=0 steps=12000 q=8 L=4 bn=64 ===
+quantum N=2048      0/12000  ω=96.10%  ω_hi=89.27%  vel=94.41%  [0s]
+quantum N=2048   1000/12000  ω=16.30%  ω_hi=15.34%  vel=6.57%  [26s]
+quantum N=2048   2000/12000  ω=12.63%  ω_hi=11.30%  vel=4.59%  [52s]
+quantum N=2048   3000/12000  ω=12.52%  ω_hi=11.05%  vel=4.00%  [78s]
+quantum N=2048   4000/12000  ω=10.23%  ω_hi=8.90%  vel=3.68%  [104s]
+quantum N=2048   5000/12000  ω=8.77%  ω_hi=7.38%  vel=3.04%  [129s]
+quantum N=2048   6000/12000  ω=8.31%  ω_hi=6.73%  vel=3.18%  [155s]
+quantum N=2048   7000/12000  ω=7.28%  ω_hi=6.02%  vel=3.22%  [181s]
+quantum N=2048   8000/12000  ω=6.25%  ω_hi=5.09%  vel=2.92%  [207s]
+quantum N=2048   9000/12000  ω=5.49%  ω_hi=4.53%  vel=2.93%  [233s]
+quantum N=2048  10000/12000  ω=4.81%  ω_hi=4.01%  vel=2.85%  [258s]
+quantum N=2048  11000/12000  ω=5.01%  ω_hi=4.16%  vel=2.74%  [284s]
+quantum N=2048  11999/12000  ω=5.13%  ω_hi=4.25%  vel=2.72%  [310s]
+ablation used=True  Δrand=13.931pp  Δzero=26.288pp
+DONE quantum N=2048  ω=4.73%  ω_hi=3.95%  [310.5s]  → /home/mozer/qt-pinn/blog/checkpoint/v6/sample_eff/N2048_s0/quantum
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (7 rows)
+=== quantum N=4096 (attempt 1/3) ===
+=== v6 quantum  N=4096 seed=0 steps=12000 q=8 L=4 bn=64 ===
+quantum N=4096      0/12000  ω=96.62%  ω_hi=89.85%  vel=94.80%  [0s]
+quantum N=4096   1000/12000  ω=14.54%  ω_hi=13.69%  vel=5.48%  [26s]
+quantum N=4096   2000/12000  ω=12.72%  ω_hi=11.55%  vel=4.44%  [51s]
+quantum N=4096   3000/12000  ω=12.56%  ω_hi=11.03%  vel=4.69%  [76s]
+quantum N=4096   4000/12000  ω=10.18%  ω_hi=8.89%  vel=3.72%  [101s]
+quantum N=4096   5000/12000  ω=8.85%  ω_hi=7.58%  vel=3.41%  [127s]
+quantum N=4096   6000/12000  ω=8.07%  ω_hi=6.68%  vel=3.03%  [152s]
+quantum N=4096   7000/12000  ω=6.92%  ω_hi=5.70%  vel=2.94%  [177s]
+quantum N=4096   8000/12000  ω=5.73%  ω_hi=4.79%  vel=2.82%  [202s]
+quantum N=4096   9000/12000  ω=4.98%  ω_hi=4.14%  vel=2.84%  [227s]
+quantum N=4096  10000/12000  ω=4.49%  ω_hi=3.78%  vel=2.88%  [252s]
+quantum N=4096  11000/12000  ω=4.73%  ω_hi=4.00%  vel=2.83%  [278s]

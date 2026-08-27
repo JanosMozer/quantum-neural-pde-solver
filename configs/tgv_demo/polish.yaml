@@ -1,8 +1,0 @@
-# Polish TGV demo (target ≤1% vel rel-L2)
-preset: polish
-hard_ic: true
-nu: 0.1
-t_max: 5.0
-loss_mode: both
-t_weight: true
-t_sample: tail

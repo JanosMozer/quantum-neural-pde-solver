@@ -1,0 +1,16 @@
+=== v6 classical_gen  N=2048 seed=2 steps=12000 q=8 L=4 bn=64 ===
+classical_gen N=2048      0/12000  ω=89.44%  ω_hi=83.11%  vel=89.40%  [0s]
+classical_gen N=2048   1000/12000  ω=16.11%  ω_hi=15.43%  vel=6.53%  [9s]
+classical_gen N=2048   2000/12000  ω=12.54%  ω_hi=11.16%  vel=4.37%  [18s]
+classical_gen N=2048   3000/12000  ω=11.85%  ω_hi=10.40%  vel=3.78%  [27s]
+classical_gen N=2048   4000/12000  ω=10.74%  ω_hi=9.04%  vel=3.90%  [36s]
+classical_gen N=2048   5000/12000  ω=8.99%  ω_hi=7.47%  vel=3.75%  [45s]
+classical_gen N=2048   6000/12000  ω=8.02%  ω_hi=6.65%  vel=4.22%  [54s]
+classical_gen N=2048   7000/12000  ω=7.04%  ω_hi=5.71%  vel=4.05%  [63s]
+classical_gen N=2048   8000/12000  ω=6.09%  ω_hi=4.92%  vel=3.93%  [72s]
+classical_gen N=2048   9000/12000  ω=5.36%  ω_hi=4.44%  vel=3.86%  [81s]
+classical_gen N=2048  10000/12000  ω=4.92%  ω_hi=4.07%  vel=3.88%  [90s]
+classical_gen N=2048  11000/12000  ω=5.00%  ω_hi=4.13%  vel=3.86%  [99s]
+classical_gen N=2048  11999/12000  ω=5.09%  ω_hi=4.20%  vel=3.86%  [107s]
+DONE classical_gen N=2048  ω=4.85%  ω_hi=4.02%  [107.6s]  → /home/mozer/qt-pinn/blog/checkpoint/v6/sample_eff/N2048_s2/classical_gen
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (22 rows)

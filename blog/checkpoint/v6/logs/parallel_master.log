@@ -1,0 +1,55 @@
+[skip] classical_gen N=512 seed=0
+[skip] quantum N=512 seed=0
+[skip] classical_gen N=1024 seed=0
+[skip] quantum N=1024 seed=0
+[skip] classical_gen N=2048 seed=0
+[skip] quantum N=2048 seed=0
+[skip] classical_gen N=4096 seed=0
+[skip] classical_gen N=512 seed=1
+[v6 parallel] 22 jobs queued, concurrency=8
+[start] quantum N=4096 seed=0 → blog/checkpoint/v6/logs/parallel/quantum_N4096_s0.log
+[start] classical_gen N=8192 seed=0 → blog/checkpoint/v6/logs/parallel/classical_gen_N8192_s0.log
+[start] quantum N=8192 seed=0 → blog/checkpoint/v6/logs/parallel/quantum_N8192_s0.log
+[start] quantum N=512 seed=1 → blog/checkpoint/v6/logs/parallel/quantum_N512_s1.log
+[start] classical_gen N=1024 seed=1 → blog/checkpoint/v6/logs/parallel/classical_gen_N1024_s1.log
+[start] quantum N=1024 seed=1 → blog/checkpoint/v6/logs/parallel/quantum_N1024_s1.log
+[start] classical_gen N=2048 seed=1 → blog/checkpoint/v6/logs/parallel/classical_gen_N2048_s1.log
+[start] quantum N=2048 seed=1 → blog/checkpoint/v6/logs/parallel/quantum_N2048_s1.log
+[done]  classical_gen N=1024 seed=1
+[start] classical_gen N=4096 seed=1 → blog/checkpoint/v6/logs/parallel/classical_gen_N4096_s1.log
+[done]  classical_gen N=2048 seed=1
+[start] quantum N=4096 seed=1 → blog/checkpoint/v6/logs/parallel/quantum_N4096_s1.log
+[done]  classical_gen N=8192 seed=0
+[start] classical_gen N=8192 seed=1 → blog/checkpoint/v6/logs/parallel/classical_gen_N8192_s1.log
+[done]  classical_gen N=4096 seed=1
+[start] quantum N=8192 seed=1 → blog/checkpoint/v6/logs/parallel/quantum_N8192_s1.log
+[done]  classical_gen N=8192 seed=1
+[start] classical_gen N=512 seed=2 → blog/checkpoint/v6/logs/parallel/classical_gen_N512_s2.log
+[done]  classical_gen N=512 seed=2
+[start] quantum N=512 seed=2 → blog/checkpoint/v6/logs/parallel/quantum_N512_s2.log
+[done]  quantum N=8192 seed=0
+[start] classical_gen N=1024 seed=2 → blog/checkpoint/v6/logs/parallel/classical_gen_N1024_s2.log
+[done]  quantum N=1024 seed=1
+[start] quantum N=1024 seed=2 → blog/checkpoint/v6/logs/parallel/quantum_N1024_s2.log
+[done]  quantum N=512 seed=1
+[start] classical_gen N=2048 seed=2 → blog/checkpoint/v6/logs/parallel/classical_gen_N2048_s2.log
+[done]  quantum N=2048 seed=1
+[start] quantum N=2048 seed=2 → blog/checkpoint/v6/logs/parallel/quantum_N2048_s2.log
+[done]  quantum N=4096 seed=0
+[start] classical_gen N=4096 seed=2 → blog/checkpoint/v6/logs/parallel/classical_gen_N4096_s2.log
+[done]  quantum N=4096 seed=1
+[start] quantum N=4096 seed=2 → blog/checkpoint/v6/logs/parallel/quantum_N4096_s2.log
+[done]  classical_gen N=1024 seed=2
+[start] classical_gen N=8192 seed=2 → blog/checkpoint/v6/logs/parallel/classical_gen_N8192_s2.log
+[done]  classical_gen N=2048 seed=2
+[start] quantum N=8192 seed=2 → blog/checkpoint/v6/logs/parallel/quantum_N8192_s2.log
+[done]  classical_gen N=4096 seed=2
+[done]  quantum N=8192 seed=1
+[done]  classical_gen N=8192 seed=2
+[done]  quantum N=512 seed=2
+[done]  quantum N=1024 seed=2
+[done]  quantum N=2048 seed=2
+[done]  quantum N=4096 seed=2
+[done]  quantum N=8192 seed=2
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (30 rows)
+[v6 parallel] wave finished — see blog/checkpoint/v6/scoreboard.md

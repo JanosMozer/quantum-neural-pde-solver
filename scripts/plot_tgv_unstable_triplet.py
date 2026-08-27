@@ -364,7 +364,7 @@ def write_triplet_gif(
                 ax.set_title(title, fontsize=12)
             fig.colorbar(im, ax=axes.tolist(), fraction=0.025, pad=0.02, label=r"$|\omega|$")
             fig.suptitle(
-                rf"Unstable TGV (bottom-left boost)  $\nu={dns['nu']}$  $t={t:.2f}$",
+                rf"Unstable Taylor–Green Vortex  $\nu={dns['nu']}$  $t={t:.2f}$",
                 fontsize=13,
             )
             fig.savefig(tmp_path / f"frame_{i:04d}.png", dpi=dpi, facecolor="white")
@@ -419,7 +419,7 @@ def plot_snapshots(dns, classical, quantum, qw, out: Path, times=None):
                 ax.set_title(rf"$t={t:g}$", fontsize=11)
             if j == 0:
                 ax.set_ylabel(row_labels[i], fontsize=11)
-    fig.suptitle("Unstable TGV — bottom-left vortex boosted", fontsize=13)
+    fig.suptitle("Unstable Taylor–Green Vortex", fontsize=13)
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(fig)

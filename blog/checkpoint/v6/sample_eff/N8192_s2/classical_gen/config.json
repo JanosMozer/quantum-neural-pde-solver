@@ -1,0 +1,22 @@
+{
+  "niche": "N1_sample_efficiency",
+  "arm": "classical_gen",
+  "gen_kind": "classical_v2",
+  "seed": 2,
+  "steps": 12000,
+  "n_colloc": 8192,
+  "n_qubits": 8,
+  "n_layers": 4,
+  "bottleneck": 64,
+  "lr": 0.001,
+  "circuit_lr_scale": 1.0,
+  "teacher": true,
+  "qt_hidden": [
+    48,
+    48
+  ],
+  "n_freqs": 3,
+  "high_omega_percentile": 0.75,
+  "omega_gate": 0.02,
+  "bench_n_pts": 262144
+}

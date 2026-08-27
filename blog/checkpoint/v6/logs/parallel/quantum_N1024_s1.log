@@ -1,0 +1,17 @@
+=== v6 quantum  N=1024 seed=1 steps=12000 q=8 L=4 bn=64 ===
+quantum N=1024      0/12000  ω=92.25%  ω_hi=87.85%  vel=95.35%  [1s]
+quantum N=1024   1000/12000  ω=17.04%  ω_hi=16.09%  vel=6.44%  [41s]
+quantum N=1024   2000/12000  ω=12.70%  ω_hi=11.36%  vel=4.81%  [82s]
+quantum N=1024   3000/12000  ω=12.29%  ω_hi=10.81%  vel=4.93%  [121s]
+quantum N=1024   4000/12000  ω=10.46%  ω_hi=8.84%  vel=4.77%  [157s]
+quantum N=1024   5000/12000  ω=9.60%  ω_hi=8.09%  vel=3.33%  [194s]
+quantum N=1024   6000/12000  ω=8.97%  ω_hi=7.38%  vel=3.16%  [229s]
+quantum N=1024   7000/12000  ω=7.95%  ω_hi=6.56%  vel=3.14%  [263s]
+quantum N=1024   8000/12000  ω=7.11%  ω_hi=5.91%  vel=2.98%  [297s]
+quantum N=1024   9000/12000  ω=6.12%  ω_hi=5.02%  vel=2.82%  [331s]
+quantum N=1024  10000/12000  ω=5.62%  ω_hi=4.55%  vel=2.75%  [364s]
+quantum N=1024  11000/12000  ω=5.81%  ω_hi=4.77%  vel=2.76%  [397s]
+quantum N=1024  11999/12000  ω=5.90%  ω_hi=4.85%  vel=2.78%  [429s]
+ablation used=True  Δrand=0.201pp  Δzero=12.228pp
+DONE quantum N=1024  ω=5.54%  ω_hi=4.48%  [429.9s]  → /home/mozer/qt-pinn/blog/checkpoint/v6/sample_eff/N1024_s1/quantum
+Wrote /home/mozer/qt-pinn/blog/checkpoint/v6/scoreboard.md (16 rows)

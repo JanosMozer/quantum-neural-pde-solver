@@ -1,8 +1,0 @@
-# TGV demo defaults. CLI overrides any key.
-# .venv/bin/python scripts/train_tgv_demo.py --config configs/tgv_demo/scout.yaml --model classical
-preset: scout
-hard_ic: true
-nu: 0.1
-t_max: 5.0
-loss_mode: both
-t_weight: true

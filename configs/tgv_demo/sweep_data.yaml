@@ -1,9 +1,0 @@
-# Data-only first (no 2nd-order PDE) — fastest path to visual accuracy.
-preset: scout
-model: [classical, quantum]
-grid:
-  lambda_data: [1.0]
-extra:
-  overwrite: true
-  loss_mode: data
-  budget_s: 600
