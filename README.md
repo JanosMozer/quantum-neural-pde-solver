@@ -1,4 +1,4 @@
-# Quantum Physics Informed Neural PDE Solvers
+# Quantum Physics Informed Neural Solvers for PDEs
 
 [![Blog](https://img.shields.io/badge/Blog-meshapplied.com-blue)](https://meshapplied.com/posts/quantum-neural-pde-solver)
 
