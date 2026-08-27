@@ -1,6 +1,6 @@
 # Evaluating Variational Quantum Circuits in Physics-Informed Neural Networks for 2D Navier–Stokes
 
-[![GitHub Repository](https://img.shields.io/badge/GitHub-JanosMozer%2Fqt--pinn-blue?logo=github)](https://github.com/JanosMozer/qt-pinn)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-JanosMozer%2Fquantum--neural--pde--solver-blue?logo=github)](https://github.com/JanosMozer/quantum-neural-pde-solver)
 
 A systematic evaluation of variational quantum circuits (VQCs) inside physics-informed neural networks (PINNs) for 2D incompressible Navier–Stokes. The work spans $\nu$-conditioned hypernetworks, input-conditioned VQC field maps, and quantum weight generators for vortex merger. Matched classical baselines, degeneracy guards, and fixed DNS holdouts show no robust quantum advantage on these tasks. The project product is a classical HarmMLP PINN that reconstructs four-vortex merger against spectral DNS to **1.29%** FD-curl $\omega$ relative $L^2$, with a smaller distilled deployable net at **1.78%** $\omega$ and about $2.5\times$ inference throughput.
 
