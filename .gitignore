@@ -9,4 +9,5 @@ research/
 !checkpoints/.gitkeep
 *.pt
 *.png
+!blog/checkpoint/**/*.png
 uv.lock
