@@ -24,7 +24,7 @@ Unstable Taylor–Green Vortex: DNS | classical | quantum. One lobe is amplified
 
 ![Vortex merger omega snapshots](blog/checkpoint/v4/media/merger_triplet_snapshots.png)
 
-Vortex merger ω snapshots (red + = vortex relative maxima): DNS | classical teacher | deployable student across gate times.
+ω snapshots (red + = vortex relative maxima): DNS | classical teacher | deployable student across gate times.
 
 ## Where it stands
 
