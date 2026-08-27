@@ -1,6 +1,6 @@
 # Quantum Physics Informed Neural Solvers for PDEs
 
-[![Blog](https://img.shields.io/badge/Blog-meshapplied.com-blue)](https://meshapplied.com/posts/quantum-neural-pde-solver)
+[![Blog](https://img.shields.io/badge/Blog-meshapplied.com-blue)](https://meshapplied.com/posts/quantum-neural-solvers)
 
 Variational quantum circuits to outperform physics-informed neural networks for solving PDEs (as weight generators and as field maps) against matched classical baselines. The goal is to advance (and honestly measure) the capabilities of quantum circuits in scientific machine learning.
 
